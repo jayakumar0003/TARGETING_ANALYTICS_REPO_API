@@ -18,14 +18,6 @@ import {
   TableHeader,
   TableRow,
 } from "../components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "../components/ui/dropdown-menu";
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
 import {
@@ -47,7 +39,6 @@ type CsvRow = Record<string, string>;
 interface Props {
   data: CsvRow[];
   onUpdateRow: (updated: CsvRow, original: CsvRow) => void;
-  onExport: () => void;
 }
 
 const READ_ONLY_COLUMNS = new Set([
@@ -59,7 +50,6 @@ const READ_ONLY_COLUMNS = new Set([
 export default function TargetingAndAnalyicsTable({
   data,
   onUpdateRow,
-  onExport,
 }: Props) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -68,24 +58,22 @@ export default function TargetingAndAnalyicsTable({
 
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
     if (!data.length) return [];
+  
     return Object.keys(data[0]).map((key) => ({
       accessorKey: key,
       header: key,
       cell: ({ row }) => {
         const value = row.getValue(key) as string;
+  
         return (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="max-w-[260px] truncate">{value || "—"}</div>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xl">
-              {value || "Empty"}
-            </TooltipContent>
-          </Tooltip>
+          <div className="whitespace-normal break-words">
+            {value || ""}
+          </div>
         );
       },
     }));
   }, [data]);
+  
 
   const table = useReactTable({
     data,
@@ -102,42 +90,6 @@ export default function TargetingAndAnalyicsTable({
       {/* HEADER */}
       <div className="flex justify-between items-center p-4 border-b">
         <h2 className="font-semibold">TARGETING & ANALYTICS TABLE</h2>
-
-        <div className="flex gap-2">
-          <Button size="sm" onClick={onExport}>
-            Export CSV
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline">
-                Columns
-              </Button>
-            </DropdownMenuTrigger>
-
-            <DropdownMenuContent className="w-64">
-              <DropdownMenuLabel>Show / Hide Columns</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <ScrollArea className="h-64">
-                {table
-                  .getAllColumns()
-                  .filter((c) => c.getCanHide())
-                  .map((column) => (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) => {
-                        column.toggleVisibility(!!value);
-                      }}
-                      onSelect={(e) => e.preventDefault()} // 👈 KEEP MENU OPEN
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-              </ScrollArea>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
 
       {/* TABLE */}
@@ -146,7 +98,7 @@ export default function TargetingAndAnalyicsTable({
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (
               <TableRow key={hg.id} className="border-b">
-                {hg.headers.map((header, index) => (
+                {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     onClick={header.column.getToggleSortingHandler()}
@@ -180,16 +132,20 @@ export default function TargetingAndAnalyicsTable({
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
-                    key={cell.id}
-                    className="
-            border-r
-            border-slate-200
-            last:border-r-0
-            whitespace-nowrap
-          "
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+                  key={cell.id}
+                  className="
+                    border-r
+                    border-slate-200
+                    last:border-r-0
+                    whitespace-normal
+                    break-words
+                    align-top
+                    text-sm
+                  "
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
+                
                 ))}
               </TableRow>
             ))}
@@ -199,10 +155,10 @@ export default function TargetingAndAnalyicsTable({
 
       {/* EDIT DIALOG */}
       <Dialog open={!!selectedRow} onOpenChange={() => setSelectedRow(null)}>
-      <DialogContent
-  className="max-w-3xl"
-  onOpenAutoFocus={(e) => e.preventDefault()}
->
+        <DialogContent
+          className="max-w-3xl"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>Edit Row</DialogTitle>
           </DialogHeader>

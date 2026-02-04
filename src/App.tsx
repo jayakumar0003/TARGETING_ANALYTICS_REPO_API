@@ -65,21 +65,6 @@ function App() {
   
 
   // -----------------------------
-  // EXPORT UPDATED CSV
-  // -----------------------------
-  function exportCsv(updatedData: CsvRow[]) {
-    const csv = Papa.unparse(updatedData);
-    const blob = new Blob([csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "updated_targeting_analytics.csv";
-    link.click();
-  }
-
-  // -----------------------------
   // UPDATE SINGLE ROW
   // -----------------------------
   function updateRow(updated: CsvRow, original: CsvRow) {
@@ -163,7 +148,6 @@ function App() {
         <TargetingAndAnalyicsTable
           data={data}
           onUpdateRow={updateRow}
-          onExport={() => exportCsv(data)}
         />
       </TabsContent>
     </Tabs>
