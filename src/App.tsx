@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import Papa from "papaparse";
 import TargetingAndAnalyicsTable from "./components/TargetingAndAnalyicsTable";
 import "./index.css";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "./components/ui/tabs";
 
 /**
  * Each CSV row = object
@@ -15,13 +21,18 @@ function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [activeTable, setActiveTable] =
-    useState<"targeting">("targeting");
-
-  // -----------------------------
   // LOAD CSV ON PAGE LOAD
-  // -----------------------------
   useEffect(() => {
+    const storedData = localStorage.getItem("targeting-data");
+  
+    if (storedData) {
+      // ✅ Load from localStorage
+      setData(JSON.parse(storedData));
+      setLoading(false);
+      return;
+    }
+  
+    // ❗ First time only: load CSV
     fetch("/data/TARGETING&ANALYTICS.csv")
       .then((response) => {
         if (!response.ok) {
@@ -35,19 +46,23 @@ function App() {
           skipEmptyLines: true,
           complete: (results) => {
             setData(results.data);
+  
+            // ✅ Save as JSON
+            localStorage.setItem(
+              "targeting-data",
+              JSON.stringify(results.data)
+            );
+  
             setLoading(false);
           },
         });
       })
       .catch((err: unknown) => {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Something went wrong");
-        }
+        setError(err instanceof Error ? err.message : "Something went wrong");
         setLoading(false);
       });
   }, []);
+  
 
   // -----------------------------
   // EXPORT UPDATED CSV
@@ -68,12 +83,21 @@ function App() {
   // UPDATE SINGLE ROW
   // -----------------------------
   function updateRow(updated: CsvRow, original: CsvRow) {
-    setData((prev) =>
-      prev.map((row) =>
+    setData((prev) => {
+      const updatedData = prev.map((row) =>
         row === original ? updated : row
-      )
-    );
+      );
+  
+      // ✅ Persist changes
+      localStorage.setItem(
+        "targeting-data",
+        JSON.stringify(updatedData)
+      );
+  
+      return updatedData;
+    });
   }
+  
 
   // -----------------------------
   // UI STATES
@@ -99,40 +123,52 @@ function App() {
   // -----------------------------
   return (
     <div className="min-h-screen bg-white">
-      {/* HEADER */}
-      <div className="bg-slate-800">
-        <div className="max-w-7xl mx-auto text-white py-5 text-center font-bold text-xl">
-          TARGETING & ANALYTICS
-        </div>
-      </div>
-
-      {/* TABLE SELECTOR */}
-      <div className="max-w-8xl mx-auto mt-6 px-4">
-        <div className="flex items-center gap-3 border-b">
-          <button
-            onClick={() => setActiveTable("targeting")}
-            className={`px-4 py-2 font-bold text-sm border-b-2 transition-all ${
-              activeTable === "targeting"
-                ? "border-slate-800 text-slate-800"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            Targeting & Analytics
-          </button>
-        </div>
-
-        {/* TABLE CONTENT */}
-        <div className="mt-6">
-          {activeTable === "targeting" && (
-            <TargetingAndAnalyicsTable
-              data={data}
-              onUpdateRow={updateRow}
-              onExport={() => exportCsv(data)}
-            />
-          )}
-        </div>
-      </div>
+  {/* HEADER */}
+  <div className="bg-slate-800">
+    <div className="max-w-7xl mx-auto text-white py-5 text-center font-bold text-xl">
+      TARGETING & ANALYTICS
     </div>
+  </div>
+
+  {/* TABLE SELECTOR */}
+  <div className="max-w-8xl mx-auto mt-6 px-4">
+    <Tabs defaultValue="targeting" className="w-full">
+      {/* TAB HEADER (same look as before) */}
+      <div className="flex items-center gap-3 border-b">
+      <TabsList className="bg-transparent p-0 !shadow-none !border-none">
+  <TabsTrigger
+    value="targeting"
+    className="
+      px-4 py-2
+      font-bold text-sm
+      rounded-none
+      border-b-2
+      !shadow-none
+
+      data-[state=active]:border-slate-800
+      data-[state=active]:text-slate-800
+      data-[state=inactive]:border-transparent
+      data-[state=inactive]:text-slate-500
+      hover:text-slate-700
+    "
+  >
+    Targeting & Analytics
+  </TabsTrigger>
+</TabsList>
+
+      </div>
+
+      {/* TABLE CONTENT */}
+      <TabsContent value="targeting" className="mt-6">
+        <TargetingAndAnalyicsTable
+          data={data}
+          onUpdateRow={updateRow}
+          onExport={() => exportCsv(data)}
+        />
+      </TabsContent>
+    </Tabs>
+  </div>
+</div>
   );
 }
 

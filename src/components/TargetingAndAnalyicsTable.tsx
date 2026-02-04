@@ -145,12 +145,18 @@ export default function TargetingAndAnalyicsTable({
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((header) => (
+              <TableRow key={hg.id} className="border-b">
+                {hg.headers.map((header, index) => (
                   <TableHead
                     key={header.id}
                     onClick={header.column.getToggleSortingHandler()}
-                    className="cursor-pointer"
+                    className={`
+            cursor-pointer
+            whitespace-nowrap
+            border-r
+            border-slate-200
+            last:border-r-0
+          `}
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -166,14 +172,22 @@ export default function TargetingAndAnalyicsTable({
             {table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                className="cursor-pointer hover:bg-muted"
+                className="cursor-pointer hover:bg-muted border-b"
                 onClick={() => {
                   setSelectedRow(row.original);
                   setEditRow(row.original);
                 }}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    className="
+            border-r
+            border-slate-200
+            last:border-r-0
+            whitespace-nowrap
+          "
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
@@ -185,7 +199,10 @@ export default function TargetingAndAnalyicsTable({
 
       {/* EDIT DIALOG */}
       <Dialog open={!!selectedRow} onOpenChange={() => setSelectedRow(null)}>
-        <DialogContent className="max-w-3xl">
+      <DialogContent
+  className="max-w-3xl"
+  onOpenAutoFocus={(e) => e.preventDefault()}
+>
           <DialogHeader>
             <DialogTitle>Edit Row</DialogTitle>
           </DialogHeader>
