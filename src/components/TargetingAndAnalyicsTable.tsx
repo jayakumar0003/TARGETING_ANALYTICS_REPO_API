@@ -19,7 +19,6 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { Button } from "../components/ui/button";
-import { ScrollArea } from "../components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -28,13 +27,17 @@ import {
   DialogTitle,
 } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
+import { ScrollArea } from "../components/ui/scroll-area";
 
 type CsvRow = Record<string, string>;
 
 interface Props {
   data: CsvRow[];
-  onUpdateRow: (updated: CsvRow, original: CsvRow) => void;
+  onUpdateByPackage: (payload: CsvRow) => Promise<void>;
+  onUpdateByPackageAndPlacement: (payload: CsvRow) => Promise<void>;
 }
+
+type EditMode = "PACKAGE" | "PACKAGE_AND_PLACEMENT" | null;
 
 const READ_ONLY_COLUMNS = new Set([
   "RADIA_OR_PRISMA_PACKAGE_NAME",
@@ -42,16 +45,19 @@ const READ_ONLY_COLUMNS = new Set([
   "BUY_MODEL",
 ]);
 
-
 export default function TargetingAndAnalyicsTable({
   data,
-  onUpdateRow,
+  onUpdateByPackage,
+  onUpdateByPackageAndPlacement,
 }: Props) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [selectedRow, setSelectedRow] = useState<CsvRow | null>(null);
-  const [editRow, setEditRow] = useState<CsvRow>({});
+  const [editMode, setEditMode] = useState<EditMode>(null);
+  const [formData, setFormData] = useState<CsvRow>({});
 
+  // -----------------------------
+  // TABLE COLUMNS
+  // -----------------------------
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
     if (!data.length) return [];
 
@@ -60,10 +66,7 @@ export default function TargetingAndAnalyicsTable({
       header: key,
       cell: ({ row }) => {
         const value = row.getValue(key) as string;
-
-        return (
-          <div className="whitespace-normal break-words">{value || "—"}</div>
-        );
+        return <div className="break-words">{value || "—"}</div>;
       },
     }));
   }, [data]);
@@ -80,9 +83,8 @@ export default function TargetingAndAnalyicsTable({
 
   return (
     <Card>
-      {/* HEADER */}
-      <div className="flex justify-between items-center p-4 border-b">
-        <h2 className="font-semibold">TARGETING & ANALYTICS TABLE</h2>
+      <div className="p-4 border-b font-semibold">
+        TARGETING & ANALYTICS TABLE
       </div>
 
       {/* TABLE */}
@@ -90,18 +92,11 @@ export default function TargetingAndAnalyicsTable({
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="border-b">
+              <TableRow key={hg.id}>
                 {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    onClick={header.column.getToggleSortingHandler()}
-                    className={`
-            cursor-pointer
-            whitespace-nowrap
-            border-r
-            border-slate-200
-            last:border-r-0
-          `}
+                    className="border-r border-slate-200 cursor-pointer"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -115,26 +110,25 @@ export default function TargetingAndAnalyicsTable({
 
           <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                className="cursor-pointer hover:bg-muted border-b"
-                onClick={() => {
-                  setSelectedRow(row.original);
-                  setEditRow(row.original);
-                }}
-              >
+              <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
                     key={cell.id}
-                    className="
-                    border-r
-                    border-slate-200
-                    last:border-r-0
-                    whitespace-normal
-                    break-words
-                    align-top
-                    text-sm
-                  "
+                    className="border-r border-slate-200 cursor-pointer"
+                    onClick={() => {
+                      const col = cell.column.id;
+                      const rowData = row.original;
+
+                      if (col === "RADIA_OR_PRISMA_PACKAGE_NAME") {
+                        setEditMode("PACKAGE");
+                        setFormData({ ...rowData });
+                      }
+
+                      if (col === "PLACEMENTNAME") {
+                        setEditMode("PACKAGE_AND_PLACEMENT");
+                        setFormData({ ...rowData });
+                      }
+                    }}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
@@ -145,48 +139,50 @@ export default function TargetingAndAnalyicsTable({
         </Table>
       </div>
 
-      {/* EDIT DIALOG */}
+      {/* EDIT FORM */}
       <Dialog
-        open={!!selectedRow}
+        open={!!editMode}
         onOpenChange={(open) => {
           if (!open) {
-            // ✅ Remove focus before dialog closes
-            (document.activeElement as HTMLElement | null)?.blur();
-            setSelectedRow(null);
+            setEditMode(null);
+            setFormData({});
           }
         }}
       >
         <DialogContent
-          className="max-w-3xl"
+          className="max-w-4xl"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>Edit Row</DialogTitle>
+            <DialogTitle>
+              {editMode === "PACKAGE"
+                ? "Edit Package"
+                : "Edit Package & Placement"}
+            </DialogTitle>
           </DialogHeader>
 
           <ScrollArea className="h-[60vh] pr-4">
             <div className="grid grid-cols-2 gap-4">
-              {Object.entries(editRow).map(([key, value]) => {
-                const isReadOnly = READ_ONLY_COLUMNS.has(key);
+              {Object.entries(formData).map(([key, value]) => {
+                const readOnly = READ_ONLY_COLUMNS.has(key);
 
                 return (
                   <div key={key}>
                     <label className="text-xs text-muted-foreground">
                       {key}
                     </label>
-
                     <Input
-                      value={value ?? null}
-                      readOnly={isReadOnly}
-                      disabled={isReadOnly}
+                      value={value ?? ""}
+                      readOnly={readOnly}
+                      disabled={readOnly}
                       className={
-                        isReadOnly
+                        readOnly
                           ? "bg-muted cursor-not-allowed text-muted-foreground"
                           : ""
                       }
                       onChange={(e) => {
-                        if (!isReadOnly) {
-                          setEditRow((prev) => ({
+                        if (!readOnly) {
+                          setFormData((prev) => ({
                             ...prev,
                             [key]: e.target.value,
                           }));
@@ -201,11 +197,18 @@ export default function TargetingAndAnalyicsTable({
 
           <DialogFooter>
             <Button
-              onClick={() => {
-                if (selectedRow) {
-                  onUpdateRow(editRow, selectedRow);
+              onClick={async () => {
+                try {
+                  if (editMode === "PACKAGE") {
+                    await onUpdateByPackage(formData);
+                  } else {
+                    await onUpdateByPackageAndPlacement(formData);
+                  }
+                  setEditMode(null);
+                  setFormData({});
+                } catch {
+                  alert("Update failed");
                 }
-                setSelectedRow(null);
               }}
             >
               Save Changes

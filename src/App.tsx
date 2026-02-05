@@ -13,22 +13,22 @@ function App() {
 
   // LOAD DATA FROM BACKEND API ON PAGE LOAD
   useEffect(() => {
-    fetchUsers()
+    fetchUsers();
   }, []);
 
   async function fetchUsers() {
     try {
       setLoading(true);
       setError(null);
-  
+
       const response = await fetch("http://localhost:3000/api/users");
-  
+
       if (!response.ok) {
         throw new Error("Failed to fetch data");
       }
-  
+
       const result = await response.json();
-  
+
       setData(result.data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -36,42 +36,65 @@ function App() {
       setLoading(false);
     }
   }
-  
-  // -----------------------------
-  // UPDATE SINGLE ROW
-  // -----------------------------
-  async function updateRow(updated: CsvRow, original: CsvRow) {
+
+  async function updateByPackage(payload: CsvRow) {
     try {
       const response = await fetch(
-        "http://localhost:3000/api/users/by-placement",
+        "http://localhost:3000/api/users/by-package",
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
-          // ✅ Send row directly (what backend expects)
-          body: JSON.stringify({
-            ...updated,
-            PLACEMENTNAME: original.PLACEMENTNAME,
-          }),
+          body: JSON.stringify(payload),
         }
       );
-  
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to update package");
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        await fetchUsers(); // ✅ re-fetch after update
+      }
+    } catch (error) {
+      console.error("Package update failed:", error);
+      alert("Failed to update package. Please try again.");
+      throw error; // important → lets table know it failed
+    }
+  }
+
+  async function updateByPackageAndPlacement(payload: CsvRow) {
+    try {
+      const response = await fetch(
+        "http://localhost:3000/api/users/by-package-and-placement",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || "Failed to update record");
       }
-  
+
       const result = await response.json();
-  
-  
+
       if (result.success) {
-        // re-fetch after successful update
+        // ✅ exactly like your old working code
         await fetchUsers();
       }
     } catch (error) {
       console.error("Update failed:", error);
       alert("Failed to save changes. Please try again.");
+      throw error;
     }
   }
 
@@ -134,7 +157,11 @@ function App() {
 
           {/* TABLE CONTENT */}
           <TabsContent value="targeting" className="mt-6">
-            <TargetingAndAnalyicsTable data={data} onUpdateRow={updateRow} />
+            <TargetingAndAnalyicsTable
+              data={data}
+              onUpdateByPackage={updateByPackage}
+              onUpdateByPackageAndPlacement={updateByPackageAndPlacement}
+            />
           </TabsContent>
         </Tabs>
       </div>
