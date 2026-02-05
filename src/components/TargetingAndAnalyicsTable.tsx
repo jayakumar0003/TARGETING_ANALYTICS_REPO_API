@@ -21,11 +21,6 @@ import {
 import { Button } from "../components/ui/button";
 import { ScrollArea } from "../components/ui/scroll-area";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "../components/ui/tooltip";
-import {
   Dialog,
   DialogContent,
   DialogFooter,
@@ -58,22 +53,19 @@ export default function TargetingAndAnalyicsTable({
 
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
     if (!data.length) return [];
-  
+
     return Object.keys(data[0]).map((key) => ({
       accessorKey: key,
       header: key,
       cell: ({ row }) => {
         const value = row.getValue(key) as string;
-  
+
         return (
-          <div className="whitespace-normal break-words">
-            {value || ""}
-          </div>
+          <div className="whitespace-normal break-words">{value || "—"}</div>
         );
       },
     }));
   }, [data]);
-  
 
   const table = useReactTable({
     data,
@@ -132,8 +124,8 @@ export default function TargetingAndAnalyicsTable({
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
-                  key={cell.id}
-                  className="
+                    key={cell.id}
+                    className="
                     border-r
                     border-slate-200
                     last:border-r-0
@@ -142,10 +134,9 @@ export default function TargetingAndAnalyicsTable({
                     align-top
                     text-sm
                   "
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
-                
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
                 ))}
               </TableRow>
             ))}
@@ -154,7 +145,16 @@ export default function TargetingAndAnalyicsTable({
       </div>
 
       {/* EDIT DIALOG */}
-      <Dialog open={!!selectedRow} onOpenChange={() => setSelectedRow(null)}>
+      <Dialog
+        open={!!selectedRow}
+        onOpenChange={(open) => {
+          if (!open) {
+            // ✅ Remove focus before dialog closes
+            (document.activeElement as HTMLElement | null)?.blur();
+            setSelectedRow(null);
+          }
+        }}
+      >
         <DialogContent
           className="max-w-3xl"
           onOpenAutoFocus={(e) => e.preventDefault()}
@@ -175,7 +175,7 @@ export default function TargetingAndAnalyicsTable({
                     </label>
 
                     <Input
-                      value={value}
+                      value={value ?? null}
                       readOnly={isReadOnly}
                       disabled={isReadOnly}
                       className={

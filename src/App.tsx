@@ -1,19 +1,9 @@
 import { useEffect, useState } from "react";
-import Papa from "papaparse";
 import TargetingAndAnalyicsTable from "./components/TargetingAndAnalyicsTable";
 import "./index.css";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "./components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { Loader2 } from "lucide-react";
 
-/**
- * Each CSV row = object
- * key   -> column header
- * value -> cell value
- */
 type CsvRow = Record<string, string>;
 
 function App() {
@@ -21,86 +11,86 @@ function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // LOAD CSV ON PAGE LOAD
+  // LOAD DATA FROM BACKEND API ON PAGE LOAD
   useEffect(() => {
-    const storedData = localStorage.getItem("targeting-data");
-  
-    if (storedData) {
-      // ✅ Load from localStorage
-      setData(JSON.parse(storedData));
-      setLoading(false);
-      return;
-    }
-  
-    // ❗ First time only: load CSV
-    fetch("/data/TARGETING&ANALYTICS.csv")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to load CSV file");
-        }
-        return response.text();
-      })
-      .then((csvText) => {
-        Papa.parse<CsvRow>(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            setData(results.data);
-  
-            // ✅ Save as JSON
-            localStorage.setItem(
-              "targeting-data",
-              JSON.stringify(results.data)
-            );
-  
-            setLoading(false);
-          },
-        });
-      })
-      .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : "Something went wrong");
-        setLoading(false);
-      });
+    fetchUsers()
   }, []);
-  
 
+  async function fetchUsers() {
+    try {
+      setLoading(true);
+      setError(null);
+  
+      const response = await fetch("http://localhost:3000/api/users");
+  
+      if (!response.ok) {
+        throw new Error("Failed to fetch data");
+      }
+  
+      const result = await response.json();
+  
+      setData(result.data);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+  
   // -----------------------------
   // UPDATE SINGLE ROW
   // -----------------------------
-  function updateRow(updated: CsvRow, original: CsvRow) {
-    setData((prev) => {
-      const updatedData = prev.map((row) =>
-        row === original ? updated : row
+  async function updateRow(updated: CsvRow, original: CsvRow) {
+    try {
+      const response = await fetch(
+        "http://localhost:3000/api/users/by-placement",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // ✅ Send row directly (what backend expects)
+          body: JSON.stringify({
+            ...updated,
+            PLACEMENTNAME: original.PLACEMENTNAME,
+          }),
+        }
       );
   
-      // ✅ Persist changes
-      localStorage.setItem(
-        "targeting-data",
-        JSON.stringify(updatedData)
-      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to update record");
+      }
   
-      return updatedData;
-    });
+      const result = await response.json();
+  
+  
+      if (result.success) {
+        // re-fetch after successful update
+        await fetchUsers();
+      }
+    } catch (error) {
+      console.error("Update failed:", error);
+      alert("Failed to save changes. Please try again.");
+    }
   }
-  
 
   // -----------------------------
   // UI STATES
   // -----------------------------
   if (loading) {
     return (
-      <div className="p-6">
-        Loading TARGETING & ANALYTICS data...
+      <div className="flex h-[100vh] items-center justify-center">
+        <div className="flex items-center gap-2 text-slate-600">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="text-lg">Loading data...</span>
+        </div>
       </div>
     );
   }
 
   if (error) {
-    return (
-      <div className="p-6 text-red-600">
-        {error}
-      </div>
-    );
+    return <div className="p-6 text-red-600">{error}</div>;
   }
 
   // -----------------------------
@@ -108,22 +98,22 @@ function App() {
   // -----------------------------
   return (
     <div className="min-h-screen bg-white">
-  {/* HEADER */}
-  <div className="bg-slate-800">
-    <div className="max-w-7xl mx-auto text-white py-5 text-center font-bold text-xl">
-      TARGETING & ANALYTICS
-    </div>
-  </div>
+      {/* HEADER */}
+      <div className="bg-slate-800">
+        <div className="max-w-7xl mx-auto text-white py-5 text-center font-bold text-xl">
+          TARGETING & ANALYTICS
+        </div>
+      </div>
 
-  {/* TABLE SELECTOR */}
-  <div className="max-w-8xl mx-auto mt-6 px-4">
-    <Tabs defaultValue="targeting" className="w-full">
-      {/* TAB HEADER (same look as before) */}
-      <div className="flex items-center gap-3 border-b">
-      <TabsList className="bg-transparent p-0 !shadow-none !border-none">
-  <TabsTrigger
-    value="targeting"
-    className="
+      {/* TABLE SELECTOR */}
+      <div className="max-w-8xl mx-auto mt-6 px-4">
+        <Tabs defaultValue="targeting" className="w-full">
+          {/* TAB HEADER (same look as before) */}
+          <div className="flex items-center gap-3 border-b">
+            <TabsList className="bg-transparent p-0 !shadow-none !border-none">
+              <TabsTrigger
+                value="targeting"
+                className="
       px-4 py-2
       font-bold text-sm
       rounded-none
@@ -136,23 +126,19 @@ function App() {
       data-[state=inactive]:text-slate-500
       hover:text-slate-700
     "
-  >
-    Targeting & Analytics
-  </TabsTrigger>
-</TabsList>
+              >
+                Targeting & Analytics
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
+          {/* TABLE CONTENT */}
+          <TabsContent value="targeting" className="mt-6">
+            <TargetingAndAnalyicsTable data={data} onUpdateRow={updateRow} />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* TABLE CONTENT */}
-      <TabsContent value="targeting" className="mt-6">
-        <TargetingAndAnalyicsTable
-          data={data}
-          onUpdateRow={updateRow}
-        />
-      </TabsContent>
-    </Tabs>
-  </div>
-</div>
+    </div>
   );
 }
 
