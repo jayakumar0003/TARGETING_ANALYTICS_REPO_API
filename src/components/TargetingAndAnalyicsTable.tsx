@@ -37,10 +37,11 @@ interface Props {
 }
 
 const READ_ONLY_COLUMNS = new Set([
-  "Radia/Prisma Package Name",
-  "Placement Name",
-  "Buy Model",
+  "RADIA_OR_PRISMA_PACKAGE_NAME",
+  "PLACEMENTNAME",
+  "BUY_MODEL",
 ]);
+
 
 export default function TargetingAndAnalyicsTable({
   data,
