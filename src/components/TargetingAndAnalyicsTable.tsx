@@ -31,6 +31,19 @@ import { ScrollArea } from "../components/ui/scroll-area";
 
 type CsvRow = Record<string, string>;
 
+const PACKAGE_FIELDS = [
+  "RADIA_OR_PRISMA_PACKAGE_NAME",
+  "TACTIC",
+  "BUY_MODEL",
+  "BRAND_SAFETY",
+  "BLS_MEASUREMENT",
+  "LIVE_DATE",
+] as const;
+
+const PACKAGE_READ_ONLY_COLUMNS = new Set(["RADIA_OR_PRISMA_PACKAGE_NAME"]);
+
+
+
 interface Props {
   data: CsvRow[];
   onUpdateByPackage: (payload: CsvRow) => Promise<void>;
@@ -38,12 +51,6 @@ interface Props {
 }
 
 type EditMode = "PACKAGE" | "PACKAGE_AND_PLACEMENT" | null;
-
-const READ_ONLY_COLUMNS = new Set([
-  "RADIA_OR_PRISMA_PACKAGE_NAME",
-  "PLACEMENTNAME",
-  "BUY_MODEL",
-]);
 
 export default function TargetingAndAnalyicsTable({
   data,
@@ -54,6 +61,24 @@ export default function TargetingAndAnalyicsTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [editMode, setEditMode] = useState<EditMode>(null);
   const [formData, setFormData] = useState<CsvRow>({});
+
+  function handleCellClick(col: string, rowData: CsvRow) {
+    if (col === "RADIA_OR_PRISMA_PACKAGE_NAME") {
+      setEditMode("PACKAGE");
+
+      const filteredData: CsvRow = {};
+      PACKAGE_FIELDS.forEach((field) => {
+        filteredData[field] = rowData[field] ?? "";
+      });
+
+      setFormData(filteredData);
+    }
+
+    if (col === "PLACEMENTNAME") {
+      setEditMode("PACKAGE_AND_PLACEMENT");
+      setFormData({ ...rowData });
+    }
+  }
 
   // -----------------------------
   // TABLE COLUMNS
@@ -109,33 +134,30 @@ export default function TargetingAndAnalyicsTable({
           </TableHeader>
 
           <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className="border-r border-slate-200 cursor-pointer"
-                    onClick={() => {
-                      const col = cell.column.id;
-                      const rowData = row.original;
+  {table.getRowModel().rows.map((row) => (
+    <TableRow key={row.id}>
+      {row.getVisibleCells().map((cell) => {
+        const columnId = cell.column.id;
 
-                      if (col === "RADIA_OR_PRISMA_PACKAGE_NAME") {
-                        setEditMode("PACKAGE");
-                        setFormData({ ...rowData });
-                      }
+        return (
+          <TableCell
+            key={cell.id}
+            className="border-r border-slate-200 cursor-pointer"
+            onClick={() =>
+              handleCellClick(columnId, row.original)
+            }
+          >
+            {flexRender(
+              cell.column.columnDef.cell,
+              cell.getContext()
+            )}
+          </TableCell>
+        );
+      })}
+    </TableRow>
+  ))}
+</TableBody>
 
-                      if (col === "PLACEMENTNAME") {
-                        setEditMode("PACKAGE_AND_PLACEMENT");
-                        setFormData({ ...rowData });
-                      }
-                    }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
         </Table>
       </div>
 
@@ -164,7 +186,7 @@ export default function TargetingAndAnalyicsTable({
           <ScrollArea className="h-[60vh] pr-4">
             <div className="grid grid-cols-2 gap-4">
               {Object.entries(formData).map(([key, value]) => {
-                const readOnly = READ_ONLY_COLUMNS.has(key);
+                const readOnly = PACKAGE_READ_ONLY_COLUMNS.has(key);
 
                 return (
                   <div key={key}>
@@ -200,10 +222,16 @@ export default function TargetingAndAnalyicsTable({
               onClick={async () => {
                 try {
                   if (editMode === "PACKAGE") {
-                    await onUpdateByPackage(formData);
+                    const payload: CsvRow = {};
+                    PACKAGE_FIELDS.forEach((field) => {
+                      payload[field] = formData[field];
+                    });
+
+                    await onUpdateByPackage(payload);
                   } else {
                     await onUpdateByPackageAndPlacement(formData);
                   }
+
                   setEditMode(null);
                   setFormData({});
                 } catch {
