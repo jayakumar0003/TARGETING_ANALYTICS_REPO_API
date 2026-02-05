@@ -42,7 +42,11 @@ const PACKAGE_FIELDS = [
 
 const PACKAGE_READ_ONLY_COLUMNS = new Set(["RADIA_OR_PRISMA_PACKAGE_NAME"]);
 
-
+const PACKAGE_AND_PLACEMENT_READ_ONLY_COLUMNS = new Set([
+  "RADIA_OR_PRISMA_PACKAGE_NAME",
+  "PLACEMENTNAME",
+  "BUY_MODEL",
+]);
 
 interface Props {
   data: CsvRow[];
@@ -134,30 +138,27 @@ export default function TargetingAndAnalyicsTable({
           </TableHeader>
 
           <TableBody>
-  {table.getRowModel().rows.map((row) => (
-    <TableRow key={row.id}>
-      {row.getVisibleCells().map((cell) => {
-        const columnId = cell.column.id;
+            {table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => {
+                  const columnId = cell.column.id;
 
-        return (
-          <TableCell
-            key={cell.id}
-            className="border-r border-slate-200 cursor-pointer"
-            onClick={() =>
-              handleCellClick(columnId, row.original)
-            }
-          >
-            {flexRender(
-              cell.column.columnDef.cell,
-              cell.getContext()
-            )}
-          </TableCell>
-        );
-      })}
-    </TableRow>
-  ))}
-</TableBody>
-
+                  return (
+                    <TableCell
+                      key={cell.id}
+                      className="border-r border-slate-200 cursor-pointer"
+                      onClick={() => handleCellClick(columnId, row.original)}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
         </Table>
       </div>
 
@@ -186,13 +187,17 @@ export default function TargetingAndAnalyicsTable({
           <ScrollArea className="h-[60vh] pr-4">
             <div className="grid grid-cols-2 gap-4">
               {Object.entries(formData).map(([key, value]) => {
-                const readOnly = PACKAGE_READ_ONLY_COLUMNS.has(key);
+                const readOnly =
+                  editMode === "PACKAGE"
+                    ? PACKAGE_READ_ONLY_COLUMNS.has(key)
+                    : PACKAGE_AND_PLACEMENT_READ_ONLY_COLUMNS.has(key);
 
                 return (
                   <div key={key}>
                     <label className="text-xs text-muted-foreground">
                       {key}
                     </label>
+
                     <Input
                       value={value ?? ""}
                       readOnly={readOnly}
