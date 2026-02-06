@@ -37,6 +37,23 @@ import { ChevronDown } from "lucide-react";
 
 type CsvRow = Record<string, string>;
 
+const SAMPLE_AGENCIES = [
+  "EssenceMediacom (United States)",
+  "Mindshare (United States)",
+  "Wavemaker (United States)",
+  "Mindshare Interaction (United States)",
+  "Mediacom (United States)",
+  "Direct to Advertiser (United States)",
+];
+
+const SAMPLE_ADVERTISERS = [
+  "Rent-A-Center - US",
+  "Mizkan - US",
+  "New York Stock Exchange - US",
+  "Citizens Bank - US",
+  "Ally Bank - US",
+  "Mark Anthony Brands - US",
+];
 
 const PACKAGE_READ_ONLY_COLUMNS = new Set([
   "RADIA_OR_PRISMA_PACKAGE_NAME",
@@ -87,6 +104,11 @@ export default function TargetingAndAnalyicsTable({
   const [editMode, setEditMode] = useState<EditMode>(null);
   const [formData, setFormData] = useState<CsvRow>({});
 
+  const [selectedAgencies, setSelectedAgencies] =
+    useState<string[]>(SAMPLE_AGENCIES);
+  const [selectedAdvertisers, setSelectedAdvertisers] =
+    useState<string[]>(SAMPLE_ADVERTISERS);
+
   function handleCellClick(col: string, rowData: CsvRow) {
     if (col === "RADIA_OR_PRISMA_PACKAGE_NAME") {
       setEditMode("PACKAGE");
@@ -130,77 +152,113 @@ export default function TargetingAndAnalyicsTable({
     <Card>
       {/* hear filter*/}
       <div className="p-4 border-b flex items-center gap-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              Agency Name
-              <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          {/* <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
-            {advertiserOptions.map(adv => (
-              <DropdownMenuCheckboxItem
-                key={adv}
-                checked={selectedAdvertisers.includes(adv)}
-                onCheckedChange={checked =>
-                  setSelectedAdvertisers(prev =>
-                    checked
-                      ? [...prev, adv]
-                      : prev.filter(a => a !== adv)
-                  )
-                }
-                onSelect={e => e.preventDefault()}
-              >
-                {adv}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent> */}
-        </DropdownMenu>
+        {/* ================= AGENCY NAME ================= */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="flex items-center gap-2 text-base px-4 py-2"
+              className="flex items-center border-2 border-slate-700 gap-2 text-base px-4 py-2"
             >
-              Campaign ID
+              Agency Name
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
 
-          {/* <DropdownMenuContent
-        align="start"
-        className="w-72 max-h-64 overflow-y-auto"
-      >
-        {campaignIds.map((id) => (
-          <DropdownMenuCheckboxItem
-          key={id}
-          checked={selectedCampaignIds.includes(id)}
-          onCheckedChange={(checked) => {
-            setSelectedCampaignIds((prev) =>
-              checked
-                ? [...prev, id]
-                : prev.filter((c) => c !== id)
-            );
-          }}
-          onSelect={(e) => e.preventDefault()} // ⭐ KEEP DROPDOWN OPEN
-        >
-          {id}
-        </DropdownMenuCheckboxItem>
-        
-        ))}
-      </DropdownMenuContent> */}
+          <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
+            <DropdownMenuCheckboxItem
+              checked={selectedAgencies.length === SAMPLE_AGENCIES.length}
+              onCheckedChange={(checked) =>
+                setSelectedAgencies(checked ? SAMPLE_AGENCIES : [])
+              }
+              onSelect={(e) => e.preventDefault()}
+              className="font-semibold"
+            >
+              Select All
+            </DropdownMenuCheckboxItem>
+
+            <div className="my-1 h-px bg-slate-200" />
+
+            {SAMPLE_AGENCIES.map((agency) => (
+              <DropdownMenuCheckboxItem
+                key={agency}
+                checked={selectedAgencies.includes(agency)}
+                onCheckedChange={(checked) =>
+                  setSelectedAgencies((prev) =>
+                    checked
+                      ? [...prev, agency]
+                      : prev.filter((a) => a !== agency)
+                  )
+                }
+                onSelect={(e) => e.preventDefault()}
+              >
+                {agency}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* ================= ADVERTISER NAME ================= */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="flex items-center border-2 border-slate-700 gap-2 text-base px-4 py-2"
+            >
+              Advertiser Name
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
+            <DropdownMenuCheckboxItem
+              checked={selectedAdvertisers.length === SAMPLE_ADVERTISERS.length}
+              onCheckedChange={(checked) =>
+                setSelectedAdvertisers(checked ? SAMPLE_ADVERTISERS : [])
+              }
+              onSelect={(e) => e.preventDefault()}
+              className="font-semibold"
+            >
+              Select All
+            </DropdownMenuCheckboxItem>
+
+            <div className="my-1 h-px bg-slate-200" />
+
+            {SAMPLE_ADVERTISERS.map((adv) => (
+              <DropdownMenuCheckboxItem
+                key={adv}
+                checked={selectedAdvertisers.includes(adv)}
+                onCheckedChange={(checked) =>
+                  setSelectedAdvertisers((prev) =>
+                    checked ? [...prev, adv] : prev.filter((a) => a !== adv)
+                  )
+                }
+                onSelect={(e) => e.preventDefault()}
+              >
+                {adv}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
         </DropdownMenu>
       </div>
       {/* TABLE */}
       <div className="overflow-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-800">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
+              <TableRow key={hg.id} className="hover:bg-slate-800">
                 {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="border-r border-slate-200 cursor-pointer"
+                    className="
+            border-r border-slate-700
+            px-4 py-3
+            text-sm
+            font-bold
+            uppercase
+            tracking-wide
+            text-white
+            last:border-r-0
+          "
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -260,7 +318,7 @@ export default function TargetingAndAnalyicsTable({
           </DialogHeader>
 
           <ScrollArea className="h-[60vh] px-4">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-6">
               {Object.entries(formData).map(([key, value]) => {
                 const readOnly =
                   editMode === "PACKAGE"

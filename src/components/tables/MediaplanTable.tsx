@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -9,13 +9,13 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuCheckboxItem,
-  } from "../ui/dropdown-menu";
-  import { Button } from "../ui/button";
-  import { ChevronDown } from "lucide-react";
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
+import { ChevronDown } from "lucide-react";
 
 import { Card } from "../ui/card";
 import {
@@ -35,8 +35,7 @@ interface Props {
 
 export default function MediaplanTable({ data }: Props) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] =
-    useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
   // -----------------------------
   // CAMPAIGN FILTER STATE
@@ -50,16 +49,21 @@ export default function MediaplanTable({ data }: Props) {
     });
     return Array.from(ids);
   }, [data]);
-  
-  const [selectedCampaignIds, setSelectedCampaignIds] =
-    useState<string[]>(campaignIds);
-  
+
+  const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
+
+useEffect(() => {
+  setSelectedCampaignIds(campaignIds); // select all by default
+}, [campaignIds]);
+
   const filteredData = useMemo(() => {
     if (selectedCampaignIds.length === 0) return [];
-    return data.filter((row) =>
-      selectedCampaignIds.includes(row.CAMPAIGN_ID)
-    );
+    return data.filter((row) => selectedCampaignIds.includes(row.CAMPAIGN_ID));
   }, [data, selectedCampaignIds]);
+
+  const isAllCampaignSelected =
+  campaignIds.length > 0 &&
+  selectedCampaignIds.length === campaignIds.length;
 
   // -----------------------------
   // TABLE COLUMNS
@@ -73,9 +77,7 @@ export default function MediaplanTable({ data }: Props) {
       cell: ({ getValue }) => {
         const value = getValue<string>();
         return (
-          <div className="break-words whitespace-normal">
-            {value || "—"}
-          </div>
+          <div className="break-words whitespace-normal">{value || "—"}</div>
         );
       },
     }));
@@ -98,23 +100,38 @@ export default function MediaplanTable({ data }: Props) {
     <Card>
       {/* HEADER + FILTER */}
       <div className="p-4 border-b flex items-center gap-4">
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          className="flex items-center gap-2 text-base px-4 py-2"
-        >
-          Campaign ID
-          <ChevronDown className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent
-        align="start"
-        className="w-72 max-h-64 overflow-y-auto"
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button
+        variant="outline"
+        className="flex items-center border-2 border-slate-700 gap-2 text-base px-4 py-2"
       >
-        {campaignIds.map((id) => (
-          <DropdownMenuCheckboxItem
+        Campaign ID
+        <ChevronDown className="h-4 w-4" />
+      </Button>
+    </DropdownMenuTrigger>
+
+    <DropdownMenuContent
+      align="start"
+      className="w-72 max-h-64 overflow-y-auto"
+    >
+      {/* ✅ SELECT ALL */}
+      <DropdownMenuCheckboxItem
+        checked={isAllCampaignSelected}
+        onCheckedChange={(checked) => {
+          setSelectedCampaignIds(checked ? campaignIds : []);
+        }}
+        onSelect={(e) => e.preventDefault()} // keep open
+        className="font-semibold"
+      >
+        Select All
+      </DropdownMenuCheckboxItem>
+
+      <div className="my-1 h-px bg-slate-200" />
+
+      {/* INDIVIDUAL CAMPAIGN IDS */}
+      {campaignIds.map((id) => (
+        <DropdownMenuCheckboxItem
           key={id}
           checked={selectedCampaignIds.includes(id)}
           onCheckedChange={(checked) => {
@@ -124,25 +141,34 @@ export default function MediaplanTable({ data }: Props) {
                 : prev.filter((c) => c !== id)
             );
           }}
-          onSelect={(e) => e.preventDefault()} 
+          onSelect={(e) => e.preventDefault()} // ⭐ keep open
         >
           {id}
         </DropdownMenuCheckboxItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      ))}
+    </DropdownMenuContent>
+  </DropdownMenu>
+</div>
 
-  </div>
       {/* TABLE */}
       <div className="overflow-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-800">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
+              <TableRow key={hg.id} className="hover:bg-slate-800">
                 {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="border-r border-slate-200"
+                    className="
+            border-r border-slate-700
+            px-4 py-3
+            text-sm
+            font-bold
+            uppercase
+            tracking-wide
+            text-white
+            last:border-r-0
+          "
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -162,10 +188,7 @@ export default function MediaplanTable({ data }: Props) {
                     key={cell.id}
                     className="border-r border-slate-200"
                   >
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>

@@ -35,38 +35,39 @@ interface Props {
 }
 
 export default function RadiaplanTable({ data }: Props) {
-  // -----------------------------
+  // ----------------------------------
   // TABLE STATE
-  // -----------------------------
+  // ----------------------------------
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] =
     useState<VisibilityState>({});
 
-  // -----------------------------
-  // SELECTED FILTER STATE
-  // -----------------------------
+  // ----------------------------------
+  // FILTER STATE
+  // ----------------------------------
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
   const [selectedAdvertisers, setSelectedAdvertisers] = useState<string[]>([]);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
 
-  // -----------------------------
-  // ALL OPTIONS (RAW)
-  // -----------------------------
-  const allAgencies = useMemo(
-    () => Array.from(new Set(data.map(d => d.AGENCY_NAME).filter(Boolean))),
+  // ----------------------------------
+  // AGENCY OPTIONS (RAW)
+  // ----------------------------------
+  const agencyOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(data.map(d => d.AGENCY_NAME).filter(Boolean))
+      ),
     [data]
   );
 
-  // -----------------------------
-  // INIT: SELECT ALL ON LOAD
-  // -----------------------------
+  // Select all agencies on load
   useEffect(() => {
-    setSelectedAgencies(allAgencies);
-  }, [allAgencies]);
+    setSelectedAgencies(agencyOptions);
+  }, [agencyOptions]);
 
-  // -----------------------------
-  // FILTER 1: BY AGENCY
-  // -----------------------------
+  // ----------------------------------
+  // FILTER 1: AGENCY
+  // ----------------------------------
   const agencyFilteredData = useMemo(() => {
     if (selectedAgencies.length === 0) return [];
     return data.filter(row =>
@@ -74,9 +75,9 @@ export default function RadiaplanTable({ data }: Props) {
     );
   }, [data, selectedAgencies]);
 
-  // -----------------------------
-  // ADVERTISER OPTIONS (FROM AGENCY FILTER)
-  // -----------------------------
+  // ----------------------------------
+  // ADVERTISER OPTIONS (FROM AGENCY)
+  // ----------------------------------
   const advertiserOptions = useMemo(
     () =>
       Array.from(
@@ -89,13 +90,17 @@ export default function RadiaplanTable({ data }: Props) {
     [agencyFilteredData]
   );
 
+  // Clamp advertiser selection
   useEffect(() => {
-    setSelectedAdvertisers(advertiserOptions);
+    setSelectedAdvertisers(prev => {
+      const valid = prev.filter(a => advertiserOptions.includes(a));
+      return valid.length > 0 ? valid : advertiserOptions;
+    });
   }, [advertiserOptions]);
 
-  // -----------------------------
-  // FILTER 2: BY ADVERTISER
-  // -----------------------------
+  // ----------------------------------
+  // FILTER 2: ADVERTISER
+  // ----------------------------------
   const advertiserFilteredData = useMemo(() => {
     if (selectedAdvertisers.length === 0) return [];
     return agencyFilteredData.filter(row =>
@@ -103,9 +108,9 @@ export default function RadiaplanTable({ data }: Props) {
     );
   }, [agencyFilteredData, selectedAdvertisers]);
 
-  // -----------------------------
-  // CAMPAIGN OPTIONS (FROM ADVERTISER FILTER)
-  // -----------------------------
+  // ----------------------------------
+  // CAMPAIGN OPTIONS (FROM ADVERTISER)
+  // ----------------------------------
   const campaignOptions = useMemo(
     () =>
       Array.from(
@@ -118,13 +123,17 @@ export default function RadiaplanTable({ data }: Props) {
     [advertiserFilteredData]
   );
 
+  // Clamp campaign selection
   useEffect(() => {
-    setSelectedCampaignIds(campaignOptions);
+    setSelectedCampaignIds(prev => {
+      const valid = prev.filter(c => campaignOptions.includes(c));
+      return valid.length > 0 ? valid : campaignOptions;
+    });
   }, [campaignOptions]);
 
-  // -----------------------------
-  // FILTER 3: BY CAMPAIGN
-  // -----------------------------
+  // ----------------------------------
+  // FILTER 3: CAMPAIGN (FINAL DATA)
+  // ----------------------------------
   const filteredData = useMemo(() => {
     if (selectedCampaignIds.length === 0) return [];
     return advertiserFilteredData.filter(row =>
@@ -132,11 +141,26 @@ export default function RadiaplanTable({ data }: Props) {
     );
   }, [advertiserFilteredData, selectedCampaignIds]);
 
-  // -----------------------------
+  // ----------------------------------
+  // SELECT ALL STATES
+  // ----------------------------------
+  const isAllAgenciesSelected =
+    agencyOptions.length > 0 &&
+    selectedAgencies.length === agencyOptions.length;
+
+  const isAllAdvertisersSelected =
+    advertiserOptions.length > 0 &&
+    selectedAdvertisers.length === advertiserOptions.length;
+
+  const isAllCampaignsSelected =
+    campaignOptions.length > 0 &&
+    selectedCampaignIds.length === campaignOptions.length;
+
+  // ----------------------------------
   // TABLE COLUMNS
-  // -----------------------------
+  // ----------------------------------
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
-    if (!filteredData.length) return [];
+    if (filteredData.length === 0) return [];
     return Object.keys(filteredData[0]).map(key => ({
       accessorKey: key,
       header: key,
@@ -158,35 +182,45 @@ export default function RadiaplanTable({ data }: Props) {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  // -----------------------------
+  // ----------------------------------
   // RENDER
-  // -----------------------------
+  // ----------------------------------
   return (
     <Card>
       {/* FILTER BAR */}
-      <div className="p-4 border-b flex gap-4">
+      <div className="p-4 border-b flex gap-4 flex-wrap">
+
         {/* AGENCY */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              Agency Name<ChevronDown className="ml-2 h-4 w-4" />
+            <Button variant="outline" className="border-2 border-slate-700">
+              Agency Name <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
-            {allAgencies.map(agency => (
+            <DropdownMenuCheckboxItem
+              checked={isAllAgenciesSelected}
+              onCheckedChange={checked =>
+                setSelectedAgencies(checked ? agencyOptions : [])
+              }
+              onSelect={e => e.preventDefault()}
+              className="font-semibold"
+            >
+              Select All
+            </DropdownMenuCheckboxItem>
+            <div className="my-1 h-px bg-slate-200" />
+            {agencyOptions.map(a => (
               <DropdownMenuCheckboxItem
-                key={agency}
-                checked={selectedAgencies.includes(agency)}
+                key={a}
+                checked={selectedAgencies.includes(a)}
                 onCheckedChange={checked =>
                   setSelectedAgencies(prev =>
-                    checked
-                      ? [...prev, agency]
-                      : prev.filter(a => a !== agency)
+                    checked ? [...prev, a] : prev.filter(x => x !== a)
                   )
                 }
                 onSelect={e => e.preventDefault()}
               >
-                {agency}
+                {a}
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
@@ -195,25 +229,34 @@ export default function RadiaplanTable({ data }: Props) {
         {/* ADVERTISER */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              Advertiser Name<ChevronDown className="ml-2 h-4 w-4" />
+            <Button variant="outline" className="border-2 border-slate-700">
+              Advertiser Name <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
-            {advertiserOptions.map(adv => (
+            <DropdownMenuCheckboxItem
+              checked={isAllAdvertisersSelected}
+              onCheckedChange={checked =>
+                setSelectedAdvertisers(checked ? advertiserOptions : [])
+              }
+              onSelect={e => e.preventDefault()}
+              className="font-semibold"
+            >
+              Select All
+            </DropdownMenuCheckboxItem>
+            <div className="my-1 h-px bg-slate-200" />
+            {advertiserOptions.map(a => (
               <DropdownMenuCheckboxItem
-                key={adv}
-                checked={selectedAdvertisers.includes(adv)}
+                key={a}
+                checked={selectedAdvertisers.includes(a)}
                 onCheckedChange={checked =>
                   setSelectedAdvertisers(prev =>
-                    checked
-                      ? [...prev, adv]
-                      : prev.filter(a => a !== adv)
+                    checked ? [...prev, a] : prev.filter(x => x !== a)
                   )
                 }
                 onSelect={e => e.preventDefault()}
               >
-                {adv}
+                {a}
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
@@ -222,25 +265,34 @@ export default function RadiaplanTable({ data }: Props) {
         {/* CAMPAIGN */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">
+            <Button variant="outline" className="border-2 border-slate-700">
               Campaign ID <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
-            {campaignOptions.map(id => (
+            <DropdownMenuCheckboxItem
+              checked={isAllCampaignsSelected}
+              onCheckedChange={checked =>
+                setSelectedCampaignIds(checked ? campaignOptions : [])
+              }
+              onSelect={e => e.preventDefault()}
+              className="font-semibold"
+            >
+              Select All
+            </DropdownMenuCheckboxItem>
+            <div className="my-1 h-px bg-slate-200" />
+            {campaignOptions.map(c => (
               <DropdownMenuCheckboxItem
-                key={id}
-                checked={selectedCampaignIds.includes(id)}
+                key={c}
+                checked={selectedCampaignIds.includes(c)}
                 onCheckedChange={checked =>
                   setSelectedCampaignIds(prev =>
-                    checked
-                      ? [...prev, id]
-                      : prev.filter(c => c !== id)
+                    checked ? [...prev, c] : prev.filter(x => x !== c)
                   )
                 }
                 onSelect={e => e.preventDefault()}
               >
-                {id}
+                {c}
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
@@ -250,11 +302,14 @@ export default function RadiaplanTable({ data }: Props) {
       {/* TABLE */}
       <div className="overflow-auto">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-800">
             {table.getHeaderGroups().map(hg => (
               <TableRow key={hg.id}>
                 {hg.headers.map(header => (
-                  <TableHead key={header.id}>
+                  <TableHead
+                    key={header.id}
+                    className="text-white font-bold uppercase"
+                  >
                     {flexRender(
                       header.column.columnDef.header,
                       header.getContext()
@@ -281,10 +336,7 @@ export default function RadiaplanTable({ data }: Props) {
 
             {filteredData.length === 0 && (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="text-center py-6 text-muted-foreground"
-                >
+                <TableCell colSpan={columns.length} className="text-center py-6">
                   No data available
                 </TableCell>
               </TableRow>

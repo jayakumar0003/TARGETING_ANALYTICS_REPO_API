@@ -3,14 +3,14 @@ import TargetingAndAnalyicsTable from "./components/tables/TargetingAndAnalyicsT
 import "./index.css";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Loader2 } from "lucide-react";
-
+import img from "../public/WPP_1-removebg-preview.png"
 import {
   fetchTargetingApi,
   updateByPackageApi,
   updateByPackageAndPlacementApi,
   type CsvRow,
 } from "./api/targeting.api";
-import CampaignTable from "./components/tables/campaignTable";
+import CampaignTable from "./components/tables/CampaignTable";
 import { fetchCampaignApi } from "./api/campaign.api";
 import { fetchMediaPlanApi } from "./api/mediaplan.api";
 import { fetchRadiaPlanApi } from "./api/radiaplan.api";
@@ -112,7 +112,8 @@ function App() {
       throw err;
     }
   }
-  
+
+  const title = "Single Source Of Truth";
   // -----------------------------
   // UI STATES
   // -----------------------------
@@ -131,9 +132,48 @@ function App() {
   // -----------------------------
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-slate-800 text-white py-5 text-center font-bold text-2xl">
-        Single Source Of Truth
-      </div>
+      <div className="bg-slate-800 px-20 py-4 flex items-center justify-between">
+  {/* LEFT SIDE — TITLE */}
+ 
+
+  <div className="flex flex-col items-center">
+  <h1 className="flex flex-wrap text-2xl font-bold">
+    {title.split(" ").map((word, wordIndex) => (
+      <span key={wordIndex} className="mr-3 flex">
+        {word.split("").map((char, charIndex) => (
+          <span
+            key={charIndex}
+            className="
+              bg-gradient-to-b
+              from-white
+              to-slate-300
+              bg-clip-text
+              text-transparent
+              drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]
+              tracking-wide
+            "
+          >
+            {char}
+          </span>
+        ))}
+      </span>
+    ))}
+  </h1>
+
+  {/* subtle underline */}
+  <div className="mt-1 h-[2px] w-72 bg-gradient-to-r from-transparent via-slate-400 to-transparent" />
+</div>
+
+  {/* RIGHT SIDE — LOGO */}
+  <div className="flex items-center gap-3">
+    
+    <img
+      src={img}
+      alt="WPP Logo"
+      className="h-12 object-contain"
+    />
+  </div>
+</div>
       
       <div className="max-w-8xl mx-auto mt-6 px-4">
         <Tabs defaultValue="radiaPlan" className="w-full">
@@ -208,7 +248,6 @@ function App() {
             data-[state=active]:text-slate-800
             data-[state=inactive]:border-transparent
             data-[state=inactive]:text-slate-500
-            hover:text-slate-700
           "
               >
                 Media Plan

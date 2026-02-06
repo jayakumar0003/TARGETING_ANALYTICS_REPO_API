@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -35,6 +35,7 @@ interface Props {
 }
 
 export default function CampaignTable({ data }: Props) {
+
   // -----------------------------
   // TABLE STATE
   // -----------------------------
@@ -55,15 +56,22 @@ export default function CampaignTable({ data }: Props) {
     return Array.from(ids);
   }, [data]);
 
-  const [selectedRadiaIds, setSelectedRadiaIds] =
-    useState<string[]>(radiaIds);
+  const [selectedRadiaIds, setSelectedRadiaIds] = useState<string[]>([]);
 
-  const filteredData = useMemo(() => {
-    if (selectedRadiaIds.length === 0) return [];
-    return data.filter((row) =>
-      selectedRadiaIds.includes(row.RADIA_ID)
-    );
-  }, [data, selectedRadiaIds]);
+useEffect(() => {
+  setSelectedRadiaIds(radiaIds); // select all by default
+}, [radiaIds]);
+
+    const filteredData = useMemo(() => {
+      if (selectedRadiaIds.length === 0) return [];
+      return data.filter((row) =>
+        selectedRadiaIds.includes(row.RADIA_ID)
+      );
+    }, [data, selectedRadiaIds]);
+
+    const isAllSelected =
+  radiaIds.length > 0 &&
+  selectedRadiaIds.length === radiaIds.length;
 
   // -----------------------------
   // TABLE COLUMNS
@@ -105,51 +113,75 @@ export default function CampaignTable({ data }: Props) {
     <Card>
       {/* HEADER + FILTER */}
       <div className="p-4 border-b flex items-center gap-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 text-base px-4 py-2"
-            >
-              Radia ID
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button
+        variant="outline"
+        className="flex items-center border-2 border-slate-700 gap-2 text-base px-4 py-2"
+      >
+        Radia ID
+        <ChevronDown className="h-4 w-4" />
+      </Button>
+    </DropdownMenuTrigger>
 
-          <DropdownMenuContent
-            align="start"
-            className="w-72 max-h-64 overflow-y-auto"
-          >
-            {radiaIds.map((id) => (
-              <DropdownMenuCheckboxItem
-                key={id}
-                checked={selectedRadiaIds.includes(id)}
-                onCheckedChange={(checked) => {
-                  setSelectedRadiaIds((prev) =>
-                    checked
-                      ? [...prev, id]
-                      : prev.filter((v) => v !== id)
-                  );
-                }}
-                onSelect={(e) => e.preventDefault()} // ⭐ keep open
-              >
-                {id}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+    <DropdownMenuContent
+      align="start"
+      className="w-72 max-h-64 overflow-y-auto"
+    >
+      {/* ✅ SELECT ALL */}
+      <DropdownMenuCheckboxItem
+        checked={isAllSelected}
+        onCheckedChange={(checked) => {
+          setSelectedRadiaIds(checked ? radiaIds : []);
+        }}
+        onSelect={(e) => e.preventDefault()}
+        className="font-semibold"
+      >
+        Select All
+      </DropdownMenuCheckboxItem>
+
+      <div className="my-1 h-px bg-slate-200" />
+
+      {/* INDIVIDUAL RADIA IDs */}
+      {radiaIds.map((id) => (
+        <DropdownMenuCheckboxItem
+          key={id}
+          checked={selectedRadiaIds.includes(id)}
+          onCheckedChange={(checked) => {
+            setSelectedRadiaIds((prev) =>
+              checked
+                ? [...prev, id]
+                : prev.filter((v) => v !== id)
+            );
+          }}
+          onSelect={(e) => e.preventDefault()} // ⭐ keep open
+        >
+          {id}
+        </DropdownMenuCheckboxItem>
+      ))}
+    </DropdownMenuContent>
+  </DropdownMenu>
+</div>
 
       {/* TABLE */}
       <div className="overflow-auto">
         <Table>
-          <TableHeader>
+        <TableHeader className="bg-slate-800">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
+              <TableRow key={hg.id} className="hover:bg-slate-800">
                 {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="border-r border-slate-200"
+                    className="
+            border-r border-slate-700
+            px-4 py-3
+            text-sm
+            font-bold
+            uppercase
+            tracking-wide
+            text-white
+            last:border-r-0
+          "
                   >
                     {flexRender(
                       header.column.columnDef.header,
