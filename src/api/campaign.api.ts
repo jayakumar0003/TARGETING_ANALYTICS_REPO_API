@@ -1,7 +1,7 @@
 
 export type CsvRow = Record<string, string>;
 
-const BASE_URL = "http://localhost:3000/api/campaign";
+const BASE_URL = "https://targetingandanalytics-backend.onrender.com/api/campaign";
 
 // -----------------------------
 // FETCH CAMPAIGN
