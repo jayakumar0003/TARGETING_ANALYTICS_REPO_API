@@ -1,13 +1,12 @@
-// src/api/users.api.ts
 
 export type CsvRow = Record<string, string>;
 
-const BASE_URL = "http://localhost:3000/api/users";
+const BASE_URL = "http://localhost:3000/api/targeting";
 
 // -----------------------------
-// FETCH USERS
+// FETCH TARGETING DATA
 // -----------------------------
-export async function fetchUsersApi(): Promise<CsvRow[]> {
+export async function fetchTargetingApi(): Promise<CsvRow[]> {
   const response = await fetch(BASE_URL);
 
   if (!response.ok) {

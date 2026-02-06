@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
-import TargetingAndAnalyicsTable from "./components/TargetingAndAnalyicsTable";
+import TargetingAndAnalyicsTable from "./components/tables/TargetingAndAnalyicsTable";
 import "./index.css";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Loader2 } from "lucide-react";
 
 import {
-  fetchUsersApi,
+  fetchTargetingApi,
   updateByPackageApi,
   updateByPackageAndPlacementApi,
   type CsvRow,
-} from "./api/users.api";
+} from "./api/targeting.api";
+import CampaignTable from "./components/tables/campaignTable";
+import { fetchCampaignApi } from "./api/campaign.api";
+import { fetchMediaPlanApi } from "./api/mediaplan.api";
+import { fetchRadiaPlanApi } from "./api/radiaplan.api";
+import RadiaplanTable from "./components/tables/RadiaplanTable";
+import MediaplanTable from "./components/tables/MediaplanTable";
 
 function App() {
-  const [data, setData] = useState<CsvRow[]>([]);
+  const [targetingdata, setTargetingData] = useState<CsvRow[]>([]);
+  const [campaignData, setCampaignData] = useState<CsvRow[]>([]);
+  const [mediaPlanData, setMediaPlanData] = useState<CsvRow[]>([]);
+  const [radiaPlanData, setRadiaPlanData] = useState<CsvRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,15 +29,18 @@ function App() {
   // LOAD DATA
   // -----------------------------
   useEffect(() => {
-    loadUsers();
+    loadTargetingData();
+    loadCampaignData()
+    loadRadiaPlanData()
+    loadMediaPlanData()
   }, []);
 
-  async function loadUsers() {
+  async function loadTargetingData() {
     try {
       setLoading(true);
       setError(null);
-      const users = await fetchUsersApi();
-      setData(users);
+      const data = await fetchTargetingApi();
+      setTargetingData(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -36,13 +48,55 @@ function App() {
     }
   }
 
+  async function loadCampaignData() {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchCampaignApi();
+      setCampaignData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadRadiaPlanData() {
+    try {
+      setLoading(true);
+      setError(null);
+  
+      const data = await fetchRadiaPlanApi();
+      setRadiaPlanData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadMediaPlanData() {
+    try {
+      setLoading(true);
+      setError(null);
+  
+      const data = await fetchMediaPlanApi();
+      setMediaPlanData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+  
+
   // -----------------------------
   // UPDATE HANDLERS
   // -----------------------------
   async function updateByPackage(payload: CsvRow) {
     try {
       await updateByPackageApi(payload);
-      await loadUsers();
+      await loadTargetingData();
     } catch (err) {
       alert("Failed to update package");
       throw err;
@@ -52,7 +106,7 @@ function App() {
   async function updateByPackageAndPlacement(payload: CsvRow) {
     try {
       await updateByPackageAndPlacementApi(payload);
-      await loadUsers();
+      await loadTargetingData();
     } catch (err) {
       alert("Failed to update record");
       throw err;
@@ -84,19 +138,102 @@ function App() {
       </div>
 
       <div className="max-w-8xl mx-auto mt-6 px-4">
-        <Tabs defaultValue="targeting">
-          <TabsList>
-            <TabsTrigger value="targeting">
-              Targeting & Analytics
-            </TabsTrigger>
-          </TabsList>
+        <Tabs defaultValue="targeting" className="w-full">
+          {/* TAB HEADER */}
+          <div className="flex items-center gap-3 border-b">
+            <TabsList className="bg-transparent p-0 !shadow-none !border-none">
+              <TabsTrigger
+                value="targeting"
+                className="
+            px-4 py-2
+            font-bold text-sm
+            rounded-none
+            border-b-2
+            !shadow-none
 
+            data-[state=active]:border-slate-800
+            data-[state=active]:text-slate-800
+            data-[state=inactive]:border-transparent
+            data-[state=inactive]:text-slate-500
+            hover:text-slate-700
+          "
+              >
+                Targeting & Analytics
+              </TabsTrigger>
+              <TabsTrigger
+                value="campaign"
+                className="
+            px-4 py-2
+            font-bold text-sm
+            rounded-none
+            border-b-2
+            !shadow-none
+
+            data-[state=active]:border-slate-800
+            data-[state=active]:text-slate-800
+            data-[state=inactive]:border-transparent
+            data-[state=inactive]:text-slate-500
+            hover:text-slate-700
+          "
+              >
+                CAMPAIGN OVERVIEW
+              </TabsTrigger>
+              <TabsTrigger
+                value="radiaPlan"
+                className="
+            px-4 py-2
+            font-bold text-sm
+            rounded-none
+            border-b-2
+            !shadow-none
+
+            data-[state=active]:border-slate-800
+            data-[state=active]:text-slate-800
+            data-[state=inactive]:border-transparent
+            data-[state=inactive]:text-slate-500
+            hover:text-slate-700
+          "
+              >
+                RADIA PLAN
+              </TabsTrigger>
+              <TabsTrigger
+                value="mediaPlan"
+                className="
+            px-4 py-2
+            font-bold text-sm
+            rounded-none
+            border-b-2
+            !shadow-none
+
+            data-[state=active]:border-slate-800
+            data-[state=active]:text-slate-800
+            data-[state=inactive]:border-transparent
+            data-[state=inactive]:text-slate-500
+            hover:text-slate-700
+          "
+              >
+                MEDIA PLAN
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* TAB CONTENT */}
           <TabsContent value="targeting" className="mt-6">
             <TargetingAndAnalyicsTable
-              data={data}
+              data={targetingdata}
               onUpdateByPackage={updateByPackage}
               onUpdateByPackageAndPlacement={updateByPackageAndPlacement}
             />
+            
+          </TabsContent>
+          <TabsContent value="campaign" className="mt-6">
+            <CampaignTable data={campaignData}/>
+          </TabsContent>
+          <TabsContent value="radiaPlan" className="mt-6">
+            <RadiaplanTable data={radiaPlanData}/>
+          </TabsContent>
+          <TabsContent value="mediaPlan" className="mt-6">
+            <MediaplanTable data={mediaPlanData}/>
           </TabsContent>
         </Tabs>
       </div>

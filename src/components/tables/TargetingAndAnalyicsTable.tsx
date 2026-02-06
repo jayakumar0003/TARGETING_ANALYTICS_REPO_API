@@ -9,7 +9,7 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 
-import { Card } from "../components/ui/card";
+import { Card } from "../ui/card";
 import {
   Table,
   TableBody,
@@ -17,17 +17,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../components/ui/table";
-import { Button } from "../components/ui/button";
+} from "../ui/table";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../components/ui/dialog";
-import { Input } from "../components/ui/input";
-import { ScrollArea } from "../components/ui/scroll-area";
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { ScrollArea } from "../ui/scroll-area";
 
 type CsvRow = Record<string, string>;
 
