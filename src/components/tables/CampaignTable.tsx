@@ -9,6 +9,15 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
+import { ChevronDown } from "lucide-react";
+
 import { Card } from "../ui/card";
 import {
   Table,
@@ -34,12 +43,35 @@ export default function CampaignTable({ data }: Props) {
     useState<VisibilityState>({});
 
   // -----------------------------
+  // RADIA_ID FILTER STATE
+  // -----------------------------
+  const radiaIds = useMemo(() => {
+    const ids = new Set<string>();
+    data.forEach((row) => {
+      if (row.RADIA_ID) {
+        ids.add(row.RADIA_ID);
+      }
+    });
+    return Array.from(ids);
+  }, [data]);
+
+  const [selectedRadiaIds, setSelectedRadiaIds] =
+    useState<string[]>(radiaIds);
+
+  const filteredData = useMemo(() => {
+    if (selectedRadiaIds.length === 0) return [];
+    return data.filter((row) =>
+      selectedRadiaIds.includes(row.RADIA_ID)
+    );
+  }, [data, selectedRadiaIds]);
+
+  // -----------------------------
   // TABLE COLUMNS
   // -----------------------------
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
-    if (data.length === 0) return [];
+    if (filteredData.length === 0) return [];
 
-    return Object.keys(data[0]).map((key) => ({
+    return Object.keys(filteredData[0]).map((key) => ({
       accessorKey: key,
       header: key,
       cell: ({ getValue }) => {
@@ -51,18 +83,15 @@ export default function CampaignTable({ data }: Props) {
         );
       },
     }));
-  }, [data]);
+  }, [filteredData]);
 
   // -----------------------------
   // TABLE INSTANCE
   // -----------------------------
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns,
-    state: {
-      sorting,
-      columnVisibility,
-    },
+    state: { sorting, columnVisibility },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
@@ -74,21 +103,53 @@ export default function CampaignTable({ data }: Props) {
   // -----------------------------
   return (
     <Card>
-      {/* HEADER */}
-      <div className="p-4 border-b font-semibold">
-        CAMPAIGN OVERVIEW TABLE
+      {/* HEADER + FILTER */}
+      <div className="p-4 border-b flex items-center gap-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 text-base px-4 py-2"
+            >
+              Radia ID
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent
+            align="start"
+            className="w-72 max-h-64 overflow-y-auto"
+          >
+            {radiaIds.map((id) => (
+              <DropdownMenuCheckboxItem
+                key={id}
+                checked={selectedRadiaIds.includes(id)}
+                onCheckedChange={(checked) => {
+                  setSelectedRadiaIds((prev) =>
+                    checked
+                      ? [...prev, id]
+                      : prev.filter((v) => v !== id)
+                  );
+                }}
+                onSelect={(e) => e.preventDefault()} // ⭐ keep open
+              >
+                {id}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* TABLE */}
       <div className="overflow-auto">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
+            {table.getHeaderGroups().map((hg) => (
+              <TableRow key={hg.id}>
+                {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="border-r border-slate-200 "
+                    className="border-r border-slate-200"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -106,7 +167,7 @@ export default function CampaignTable({ data }: Props) {
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
                     key={cell.id}
-                    className="border-r border-slate-200 "
+                    className="border-r border-slate-200"
                   >
                     {flexRender(
                       cell.column.columnDef.cell,
@@ -116,6 +177,17 @@ export default function CampaignTable({ data }: Props) {
                 ))}
               </TableRow>
             ))}
+
+            {filteredData.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center text-muted-foreground py-6"
+                >
+                  No data available
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>

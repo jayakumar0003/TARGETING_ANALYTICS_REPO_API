@@ -8,7 +8,6 @@ import {
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table";
-
 import { Card } from "../ui/card";
 import {
   Table,
@@ -28,6 +27,13 @@ import {
 } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
 
 type CsvRow = Record<string, string>;
 
@@ -40,12 +46,35 @@ const PACKAGE_FIELDS = [
   "LIVE_DATE",
 ] as const;
 
-const PACKAGE_READ_ONLY_COLUMNS = new Set(["RADIA_OR_PRISMA_PACKAGE_NAME"]);
+const PACKAGE_READ_ONLY_COLUMNS = new Set([
+  "RADIA_OR_PRISMA_PACKAGE_NAME",
+  "PLACEMENTNAME",
+  "LINE_ITEM_BREAK_DSP_SPECIFIC",
+  "BOOLEAN_LOGIC",
+  "TARGETING_BLURB",
+  "AUDIENCE_INFO",
+  "DEMOGRAPHICS",
+  "DATA_SOURCE_DSP",
+  "PRIMARY_KPI",
+  "BENCHMARKS",
+  "DEAL_NAME",
+  "DEAL_IDS",
+  "FLOOR_PRICE",
+  "DEVICE",
+  "BUY_MODEL",
+  "FREQUENCY_CAP",
+  "GEO",
+  "PIXELS_FLOODLIGHT",
+]);
 
 const PACKAGE_AND_PLACEMENT_READ_ONLY_COLUMNS = new Set([
   "RADIA_OR_PRISMA_PACKAGE_NAME",
   "PLACEMENTNAME",
+  "TACTIC",
   "BUY_MODEL",
+  "BRAND_SAFETY",
+  "BLS_MEASUREMENT",
+  "LIVE_DATE",
 ]);
 
 interface Props {
@@ -69,18 +98,13 @@ export default function TargetingAndAnalyicsTable({
   function handleCellClick(col: string, rowData: CsvRow) {
     if (col === "RADIA_OR_PRISMA_PACKAGE_NAME") {
       setEditMode("PACKAGE");
-
-      const filteredData: CsvRow = {};
-      PACKAGE_FIELDS.forEach((field) => {
-        filteredData[field] = rowData[field] ?? "";
-      });
-
-      setFormData(filteredData);
+      setFormData({ ...rowData }); // ✅ full row
+      return;
     }
 
     if (col === "PLACEMENTNAME") {
       setEditMode("PACKAGE_AND_PLACEMENT");
-      setFormData({ ...rowData });
+      setFormData({ ...rowData }); // ✅ full row
     }
   }
 
@@ -112,10 +136,69 @@ export default function TargetingAndAnalyicsTable({
 
   return (
     <Card>
-      <div className="p-4 border-b font-semibold">
-        TARGETING & ANALYTICS TABLE
-      </div>
+      {/* hear filter*/}
+      <div className="p-4 border-b flex items-center gap-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              Agency Name
+              <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          {/* <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
+            {advertiserOptions.map(adv => (
+              <DropdownMenuCheckboxItem
+                key={adv}
+                checked={selectedAdvertisers.includes(adv)}
+                onCheckedChange={checked =>
+                  setSelectedAdvertisers(prev =>
+                    checked
+                      ? [...prev, adv]
+                      : prev.filter(a => a !== adv)
+                  )
+                }
+                onSelect={e => e.preventDefault()}
+              >
+                {adv}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent> */}
+        </DropdownMenu>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 text-base px-4 py-2"
+            >
+              Campaign ID
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
 
+          {/* <DropdownMenuContent
+        align="start"
+        className="w-72 max-h-64 overflow-y-auto"
+      >
+        {campaignIds.map((id) => (
+          <DropdownMenuCheckboxItem
+          key={id}
+          checked={selectedCampaignIds.includes(id)}
+          onCheckedChange={(checked) => {
+            setSelectedCampaignIds((prev) =>
+              checked
+                ? [...prev, id]
+                : prev.filter((c) => c !== id)
+            );
+          }}
+          onSelect={(e) => e.preventDefault()} // ⭐ KEEP DROPDOWN OPEN
+        >
+          {id}
+        </DropdownMenuCheckboxItem>
+        
+        ))}
+      </DropdownMenuContent> */}
+        </DropdownMenu>
+      </div>
       {/* TABLE */}
       <div className="overflow-auto">
         <Table>
@@ -184,8 +267,8 @@ export default function TargetingAndAnalyicsTable({
             </DialogTitle>
           </DialogHeader>
 
-          <ScrollArea className="h-[60vh] pr-4">
-            <div className="grid grid-cols-2 gap-4">
+          <ScrollArea className="h-[60vh] px-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6">
               {Object.entries(formData).map(([key, value]) => {
                 const readOnly =
                   editMode === "PACKAGE"
@@ -193,7 +276,7 @@ export default function TargetingAndAnalyicsTable({
                     : PACKAGE_AND_PLACEMENT_READ_ONLY_COLUMNS.has(key);
 
                 return (
-                  <div key={key}>
+                  <div key={key} className="flex flex-col gap-2 pb-1 px-1">
                     <label className="text-xs text-muted-foreground">
                       {key}
                     </label>
@@ -202,11 +285,11 @@ export default function TargetingAndAnalyicsTable({
                       value={value ?? ""}
                       readOnly={readOnly}
                       disabled={readOnly}
-                      className={
+                      className={`focus-visible:ring-offset-2 ${
                         readOnly
                           ? "bg-muted cursor-not-allowed text-muted-foreground"
                           : ""
-                      }
+                      }`}
                       onChange={(e) => {
                         if (!readOnly) {
                           setFormData((prev) => ({
@@ -227,12 +310,7 @@ export default function TargetingAndAnalyicsTable({
               onClick={async () => {
                 try {
                   if (editMode === "PACKAGE") {
-                    const payload: CsvRow = {};
-                    PACKAGE_FIELDS.forEach((field) => {
-                      payload[field] = formData[field];
-                    });
-
-                    await onUpdateByPackage(payload);
+                    await onUpdateByPackage(formData);
                   } else {
                     await onUpdateByPackageAndPlacement(formData);
                   }
