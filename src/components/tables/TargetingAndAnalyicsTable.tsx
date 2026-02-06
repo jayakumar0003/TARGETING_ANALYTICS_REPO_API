@@ -37,14 +37,6 @@ import { ChevronDown } from "lucide-react";
 
 type CsvRow = Record<string, string>;
 
-const PACKAGE_FIELDS = [
-  "RADIA_OR_PRISMA_PACKAGE_NAME",
-  "TACTIC",
-  "BUY_MODEL",
-  "BRAND_SAFETY",
-  "BLS_MEASUREMENT",
-  "LIVE_DATE",
-] as const;
 
 const PACKAGE_READ_ONLY_COLUMNS = new Set([
   "RADIA_OR_PRISMA_PACKAGE_NAME",
