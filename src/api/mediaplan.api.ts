@@ -15,3 +15,25 @@ export async function fetchMediaPlanApi(): Promise<CsvRow[]> {
   const result = await response.json();
   return result.data;
 }
+
+export async function updateMediaPlanAndTargetingApi(
+  payload: CsvRow
+): Promise<void> {
+  console.log(payload);
+  const response = await fetch(
+    `${BASE_URL}/update-mediaplan-and-targeting-analytics`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      errorText || "Failed to update media plan and targeting data"
+    );
+  }
+}

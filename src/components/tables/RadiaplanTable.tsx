@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -9,15 +9,6 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-} from "../ui/dropdown-menu";
-import { Button } from "../ui/button";
-import { ChevronDown } from "lucide-react";
-
 import { Card } from "../ui/card";
 import {
   Table,
@@ -27,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { Check } from "lucide-react";
 
 type CsvRow = Record<string, string>;
 
@@ -34,134 +26,273 @@ interface Props {
   data: CsvRow[];
 }
 
-export default function RadiaplanTable({ data }: Props) {
-  // ----------------------------------
-  // TABLE STATE
-  // ----------------------------------
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] =
-    useState<VisibilityState>({});
+// Custom Dropdown Component
+interface DropdownProps {
+  label: string;
+  options: string[];
+  selectedOptions: string[];
+  onSelectionChange: (selected: string[]) => void;
+  disabled?: boolean;
+}
 
-  // ----------------------------------
-  // FILTER STATE
-  // ----------------------------------
+function CustomDropdown({
+  label,
+  options,
+  selectedOptions,
+  onSelectionChange,
+  disabled = false,
+}: DropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isOpen]);
+
+  const handleToggleOption = (option: string) => {
+    if (selectedOptions.includes(option)) {
+      onSelectionChange(selectedOptions.filter((o) => o !== option));
+    } else {
+      onSelectionChange([...selectedOptions, option]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedOptions.length === options.length) {
+      onSelectionChange([]);
+    } else {
+      onSelectionChange(options);
+    }
+  };
+
+  const isAllSelected =
+    options.length > 0 && selectedOptions.length === options.length;
+
+  return (
+    <div className="relative inline-block" ref={dropdownRef}>
+      <button
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`px-4 py-2 border-2 border-slate-700 rounded-md flex items-center gap-2 min-w-[150px] justify-between ${
+          disabled
+            ? "opacity-50 cursor-not-allowed bg-gray-100"
+            : "hover:bg-gray-50 cursor-pointer bg-white"
+        }`}
+      >
+        <span className="text-sm font-medium">{label}</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {isOpen && !disabled && (
+        <div className="absolute z-50 mt-1 w-72 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-y-auto">
+          {/* Select All */}
+          <div
+            onClick={handleSelectAll}
+            className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 font-semibold"
+          >
+            {/* Left checkmark space */}
+            <span className="w-5 mr-2 flex items-center justify-center">
+              {isAllSelected && <Check className="h-4 w-4 text-slate-800" />}
+            </span>
+
+            <span className="text-sm">Select All</span>
+          </div>
+
+          {/* Options */}
+          {options.map((option) => (
+            <div
+              key={option}
+              onClick={() => handleToggleOption(option)}
+              className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
+            >
+              {/* Left checkmark space */}
+              <span className="w-5 mr-2 flex items-center justify-center">
+                {selectedOptions.includes(option) && (
+                  <Check className="h-4 w-4 text-slate-800" />
+                )}
+              </span>
+
+              <span className="text-sm">{option}</span>
+            </div>
+          ))}
+
+          {options.length === 0 && (
+            <div className="px-4 py-2 text-sm text-gray-500">
+              No options available
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function RadiaplanTable({ data }: Props) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [selectedAgencies, setSelectedAgencies] = useState<string[]>([]);
   const [selectedAdvertisers, setSelectedAdvertisers] = useState<string[]>([]);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
 
   // ----------------------------------
-  // AGENCY OPTIONS (RAW)
+  // GET ALL AVAILABLE OPTIONS
   // ----------------------------------
   const agencyOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(data.map(d => d.AGENCY_NAME).filter(Boolean))
-      ),
+    () => Array.from(new Set(data.map((d) => d.AGENCY_NAME).filter(Boolean))),
     [data]
   );
 
-  // Select all agencies on load
-  useEffect(() => {
-    setSelectedAgencies(agencyOptions);
-  }, [agencyOptions]);
+  const advertiserOptions = useMemo(() => {
+    if (selectedAgencies.length === 0) {
+      // No agencies selected - show all advertisers
+      return Array.from(
+        new Set(data.map((d) => d.ADVERTISER_NAME).filter(Boolean))
+      );
+    }
 
-  // ----------------------------------
-  // FILTER 1: AGENCY
-  // ----------------------------------
-  const agencyFilteredData = useMemo(() => {
-    if (selectedAgencies.length === 0) return [];
-    return data.filter(row =>
-      selectedAgencies.includes(row.AGENCY_NAME)
+    // Filter advertisers based on selected agencies
+    return Array.from(
+      new Set(
+        data
+          .filter((row) => selectedAgencies.includes(row.AGENCY_NAME))
+          .map((r) => r.ADVERTISER_NAME)
+          .filter(Boolean)
+      )
     );
   }, [data, selectedAgencies]);
 
-  // ----------------------------------
-  // ADVERTISER OPTIONS (FROM AGENCY)
-  // ----------------------------------
-  const advertiserOptions = useMemo(
-    () =>
-      Array.from(
+  const campaignOptions = useMemo(() => {
+    if (selectedAgencies.length === 0 && selectedAdvertisers.length === 0) {
+      // Nothing selected - show all campaigns
+      return Array.from(
+        new Set(data.map((d) => d.CAMPAIGN_ID).filter(Boolean))
+      );
+    }
+
+    if (selectedAgencies.length === 0) {
+      // Only advertisers selected
+      return Array.from(
         new Set(
-          agencyFilteredData
-            .map(r => r.ADVERTISER_NAME)
+          data
+            .filter((row) => selectedAdvertisers.includes(row.ADVERTISER_NAME))
+            .map((r) => r.CAMPAIGN_ID)
             .filter(Boolean)
         )
-      ),
-    [agencyFilteredData]
-  );
+      );
+    }
 
-  // Clamp advertiser selection
-  useEffect(() => {
-    setSelectedAdvertisers(prev => {
-      const valid = prev.filter(a => advertiserOptions.includes(a));
-      return valid.length > 0 ? valid : advertiserOptions;
-    });
-  }, [advertiserOptions]);
+    if (selectedAdvertisers.length === 0) {
+      // Only agencies selected
+      return Array.from(
+        new Set(
+          data
+            .filter((row) => selectedAgencies.includes(row.AGENCY_NAME))
+            .map((r) => r.CAMPAIGN_ID)
+            .filter(Boolean)
+        )
+      );
+    }
 
-  // ----------------------------------
-  // FILTER 2: ADVERTISER
-  // ----------------------------------
-  const advertiserFilteredData = useMemo(() => {
-    if (selectedAdvertisers.length === 0) return [];
-    return agencyFilteredData.filter(row =>
-      selectedAdvertisers.includes(row.ADVERTISER_NAME)
+    // Both selected - filter by both
+    return Array.from(
+      new Set(
+        data
+          .filter(
+            (row) =>
+              selectedAgencies.includes(row.AGENCY_NAME) &&
+              selectedAdvertisers.includes(row.ADVERTISER_NAME)
+          )
+          .map((r) => r.CAMPAIGN_ID)
+          .filter(Boolean)
+      )
     );
-  }, [agencyFilteredData, selectedAdvertisers]);
+  }, [data, selectedAgencies, selectedAdvertisers]);
 
-  // ----------------------------------
-  // CAMPAIGN OPTIONS (FROM ADVERTISER)
-  // ----------------------------------
-  const campaignOptions = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          advertiserFilteredData
-            .map(r => r.CAMPAIGN_ID)
-            .filter(Boolean)
-        )
-      ),
-    [advertiserFilteredData]
-  );
-
-  // Clamp campaign selection
+  // Initialize with all options selected ONCE
+  const initialized = useRef(false);
   useEffect(() => {
-    setSelectedCampaignIds(prev => {
-      const valid = prev.filter(c => campaignOptions.includes(c));
-      return valid.length > 0 ? valid : campaignOptions;
-    });
-  }, [campaignOptions]);
+    if (!initialized.current && agencyOptions.length > 0) {
+      setSelectedAgencies(agencyOptions);
+      setSelectedAdvertisers(advertiserOptions);
+      setSelectedCampaignIds(campaignOptions);
+      initialized.current = true;
+    }
+  }, [agencyOptions.length]);
 
   // ----------------------------------
-  // FILTER 3: CAMPAIGN (FINAL DATA)
+  // APPLY FILTERS TO GET FINAL DATA
   // ----------------------------------
   const filteredData = useMemo(() => {
-    if (selectedCampaignIds.length === 0) return [];
-    return advertiserFilteredData.filter(row =>
-      selectedCampaignIds.includes(row.CAMPAIGN_ID)
-    );
-  }, [advertiserFilteredData, selectedCampaignIds]);
+    let result = data;
 
-  // ----------------------------------
-  // SELECT ALL STATES
-  // ----------------------------------
-  const isAllAgenciesSelected =
-    agencyOptions.length > 0 &&
-    selectedAgencies.length === agencyOptions.length;
+    // Agency filter
+    if (agencyOptions.length > 0) {
+      if (selectedAgencies.length === 0) return [];
+      result = result.filter((row) =>
+        selectedAgencies.includes(row.AGENCY_NAME)
+      );
+    }
 
-  const isAllAdvertisersSelected =
-    advertiserOptions.length > 0 &&
-    selectedAdvertisers.length === advertiserOptions.length;
+    // Advertiser filter
+    if (advertiserOptions.length > 0) {
+      if (selectedAdvertisers.length === 0) return [];
+      result = result.filter((row) =>
+        selectedAdvertisers.includes(row.ADVERTISER_NAME)
+      );
+    }
 
-  const isAllCampaignsSelected =
-    campaignOptions.length > 0 &&
-    selectedCampaignIds.length === campaignOptions.length;
+    // Campaign filter
+    if (campaignOptions.length > 0) {
+      if (selectedCampaignIds.length === 0) return [];
+      result = result.filter((row) =>
+        selectedCampaignIds.includes(row.CAMPAIGN_ID)
+      );
+    }
 
+    return result;
+  }, [
+    data,
+    agencyOptions,
+    advertiserOptions,
+    campaignOptions,
+    selectedAgencies,
+    selectedAdvertisers,
+    selectedCampaignIds,
+  ]);
   // ----------------------------------
   // TABLE COLUMNS
   // ----------------------------------
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
-    if (filteredData.length === 0) return [];
-    return Object.keys(filteredData[0]).map(key => ({
+    if (data.length === 0) return [];
+    const firstRow = data[0];
+    return Object.keys(firstRow).map((key) => ({
       accessorKey: key,
       header: key,
       cell: ({ getValue }) => (
@@ -170,7 +301,7 @@ export default function RadiaplanTable({ data }: Props) {
         </div>
       ),
     }));
-  }, [filteredData]);
+  }, [data]);
 
   const table = useReactTable({
     data: filteredData,
@@ -182,130 +313,42 @@ export default function RadiaplanTable({ data }: Props) {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  // ----------------------------------
-  // RENDER
-  // ----------------------------------
   return (
     <Card>
       {/* FILTER BAR */}
       <div className="p-4 border-b flex gap-4 flex-wrap">
+        <CustomDropdown
+          label="Agency Name"
+          options={agencyOptions}
+          selectedOptions={selectedAgencies}
+          onSelectionChange={setSelectedAgencies}
+          disabled={selectedAdvertisers.length === 0 || selectedCampaignIds.length === 0}
+        />
 
-        {/* AGENCY */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="border-2 border-slate-700">
-              Agency Name <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
-            <DropdownMenuCheckboxItem
-              checked={isAllAgenciesSelected}
-              onCheckedChange={checked =>
-                setSelectedAgencies(checked ? agencyOptions : [])
-              }
-              onSelect={e => e.preventDefault()}
-              className="font-semibold"
-            >
-              Select All
-            </DropdownMenuCheckboxItem>
-            <div className="my-1 h-px bg-slate-200" />
-            {agencyOptions.map(a => (
-              <DropdownMenuCheckboxItem
-                key={a}
-                checked={selectedAgencies.includes(a)}
-                onCheckedChange={checked =>
-                  setSelectedAgencies(prev =>
-                    checked ? [...prev, a] : prev.filter(x => x !== a)
-                  )
-                }
-                onSelect={e => e.preventDefault()}
-              >
-                {a}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <CustomDropdown
+          label="Advertiser Name"
+          options={advertiserOptions}
+          selectedOptions={selectedAdvertisers}
+          onSelectionChange={setSelectedAdvertisers}
+          disabled={selectedAgencies.length === 0 || selectedCampaignIds.length === 0}
+        />
 
-        {/* ADVERTISER */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="border-2 border-slate-700">
-              Advertiser Name <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
-            <DropdownMenuCheckboxItem
-              checked={isAllAdvertisersSelected}
-              onCheckedChange={checked =>
-                setSelectedAdvertisers(checked ? advertiserOptions : [])
-              }
-              onSelect={e => e.preventDefault()}
-              className="font-semibold"
-            >
-              Select All
-            </DropdownMenuCheckboxItem>
-            <div className="my-1 h-px bg-slate-200" />
-            {advertiserOptions.map(a => (
-              <DropdownMenuCheckboxItem
-                key={a}
-                checked={selectedAdvertisers.includes(a)}
-                onCheckedChange={checked =>
-                  setSelectedAdvertisers(prev =>
-                    checked ? [...prev, a] : prev.filter(x => x !== a)
-                  )
-                }
-                onSelect={e => e.preventDefault()}
-              >
-                {a}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* CAMPAIGN */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="border-2 border-slate-700">
-              Campaign ID <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
-            <DropdownMenuCheckboxItem
-              checked={isAllCampaignsSelected}
-              onCheckedChange={checked =>
-                setSelectedCampaignIds(checked ? campaignOptions : [])
-              }
-              onSelect={e => e.preventDefault()}
-              className="font-semibold"
-            >
-              Select All
-            </DropdownMenuCheckboxItem>
-            <div className="my-1 h-px bg-slate-200" />
-            {campaignOptions.map(c => (
-              <DropdownMenuCheckboxItem
-                key={c}
-                checked={selectedCampaignIds.includes(c)}
-                onCheckedChange={checked =>
-                  setSelectedCampaignIds(prev =>
-                    checked ? [...prev, c] : prev.filter(x => x !== c)
-                  )
-                }
-                onSelect={e => e.preventDefault()}
-              >
-                {c}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <CustomDropdown
+          label="Campaign ID"
+          options={campaignOptions}
+          selectedOptions={selectedCampaignIds}
+          onSelectionChange={setSelectedCampaignIds}
+          disabled={selectedAgencies.length === 0 || selectedAdvertisers.length === 0 }
+        />
       </div>
 
       {/* TABLE */}
       <div className="overflow-auto">
         <Table>
           <TableHeader className="bg-slate-800">
-            {table.getHeaderGroups().map(hg => (
+            {table.getHeaderGroups().map((hg) => (
               <TableRow key={hg.id}>
-                {hg.headers.map(header => (
+                {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     className="text-white font-bold uppercase"
@@ -321,23 +364,26 @@ export default function RadiaplanTable({ data }: Props) {
           </TableHeader>
 
           <TableBody>
-            {table.getRowModel().rows.map(row => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map(cell => (
-                  <TableCell key={cell.id}>
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-
-            {filteredData.length === 0 && (
+            {table.getRowModel().rows.length > 0 ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-6">
-                  No data available
+                <TableCell
+                  colSpan={columns.length || 1}
+                  className="text-center py-6 text-gray-500"
+                >
+                  No data available with current filters
                 </TableCell>
               </TableRow>
             )}

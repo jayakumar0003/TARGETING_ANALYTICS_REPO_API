@@ -12,7 +12,7 @@ import {
 } from "./api/targeting.api";
 import CampaignTable from "./components/tables/CampaignTable";
 import { fetchCampaignApi } from "./api/campaign.api";
-import { fetchMediaPlanApi } from "./api/mediaplan.api";
+import { fetchMediaPlanApi, updateMediaPlanAndTargetingApi } from "./api/mediaplan.api";
 import { fetchRadiaPlanApi } from "./api/radiaplan.api";
 import RadiaplanTable from "./components/tables/RadiaplanTable";
 import MediaplanTable from "./components/tables/MediaplanTable";
@@ -29,9 +29,9 @@ function App() {
   // LOAD DATA
   // -----------------------------
   useEffect(() => {
+    loadRadiaPlanData()
     loadTargetingData();
     loadCampaignData()
-    loadRadiaPlanData()
     loadMediaPlanData()
   }, []);
 
@@ -112,6 +112,20 @@ function App() {
       throw err;
     }
   }
+
+  // Update form in Media plan
+  async function updateMediaPlanAndTargeting(payload: CsvRow) {
+    try {
+      await updateMediaPlanAndTargetingApi(payload);
+      await loadTargetingData();
+      await loadMediaPlanData()
+    } catch (err) {
+      alert("Failed to update package");
+      throw err;
+    }
+  }
+
+
 
   const title = "Single Source Of Truth";
   // -----------------------------
@@ -271,8 +285,11 @@ function App() {
             <CampaignTable data={campaignData}/>
           </TabsContent>
           <TabsContent value="mediaPlan" className="mt-6">
-            <MediaplanTable data={mediaPlanData}/>
-          </TabsContent>
+  <MediaplanTable
+    data={mediaPlanData}
+    onSubmitMediaPlan={updateMediaPlanAndTargeting}
+  />
+</TabsContent>
         </Tabs>
       </div>
     </div>

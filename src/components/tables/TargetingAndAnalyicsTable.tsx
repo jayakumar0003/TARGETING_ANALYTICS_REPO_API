@@ -332,6 +332,7 @@ export default function TargetingAndAnalyicsTable({
                     </label>
 
                     <Input
+                      type={key === "LIVE_DATE" ? "date" : "text"}
                       value={value ?? ""}
                       readOnly={readOnly}
                       disabled={readOnly}

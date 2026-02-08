@@ -9,6 +9,13 @@ import {
   type VisibilityState,
 } from "@tanstack/react-table";
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -16,7 +23,6 @@ import {
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { ChevronDown } from "lucide-react";
-
 import { Card } from "../ui/card";
 import {
   Table,
@@ -26,35 +32,49 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { ScrollArea } from "../ui/scroll-area";
+import { Input } from "../ui/input";
 
 type CsvRow = Record<string, string>;
 
 interface Props {
   data: CsvRow[];
+  onSubmitMediaPlan: (payload: CsvRow) => Promise<void>;
 }
 
-export default function MediaplanTable({ data }: Props) {
+const MEDIA_PLAN_READ_ONLY_COLUMNS = new Set([
+  "CLIENT",
+  "PRODUCT",
+  "CAMPAIGN_ID",
+  "CAMPAIGN_NAME",
+  "PACKAGE",
+  "PLACMENT",
+  "FLIGHT",
+  "TOTAL_BUDGET",
+  "IMPRESSIONS",
+]);
+
+export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<CsvRow | null>(null);
+  const [formData, setFormData] = useState<CsvRow>({});
 
   // -----------------------------
-  // CAMPAIGN FILTER STATE
+  // CAMPAIGN FILTER
   // -----------------------------
   const campaignIds = useMemo(() => {
     const ids = new Set<string>();
-    data.forEach((row) => {
-      if (row.CAMPAIGN_ID) {
-        ids.add(row.CAMPAIGN_ID);
-      }
-    });
+    data.forEach((row) => row.CAMPAIGN_ID && ids.add(row.CAMPAIGN_ID));
     return Array.from(ids);
   }, [data]);
 
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
 
-useEffect(() => {
-  setSelectedCampaignIds(campaignIds); // select all by default
-}, [campaignIds]);
+  useEffect(() => {
+    setSelectedCampaignIds(campaignIds);
+  }, [campaignIds]);
 
   const filteredData = useMemo(() => {
     if (selectedCampaignIds.length === 0) return [];
@@ -62,11 +82,10 @@ useEffect(() => {
   }, [data, selectedCampaignIds]);
 
   const isAllCampaignSelected =
-  campaignIds.length > 0 &&
-  selectedCampaignIds.length === campaignIds.length;
+    campaignIds.length > 0 && selectedCampaignIds.length === campaignIds.length;
 
   // -----------------------------
-  // TABLE COLUMNS
+  // COLUMNS
   // -----------------------------
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
     if (filteredData.length === 0) return [];
@@ -74,10 +93,26 @@ useEffect(() => {
     return Object.keys(filteredData[0]).map((key) => ({
       accessorKey: key,
       header: key,
-      cell: ({ getValue }) => {
+      cell: ({ getValue, row }) => {
         const value = getValue<string>();
+
+        if (key === "PLACMENT") {
+          return (
+            <div
+              className="cursor-pointer text-slate-900 whitespace-normal break-words"
+              onClick={() => {
+                setSelectedRow(row.original);
+                setFormData(row.original); // ✅ FIX
+                setOpenDialog(true);
+              }}
+            >
+              {value || "—"}
+            </div>
+          );
+        }
+
         return (
-          <div className="break-words whitespace-normal">{value || "—"}</div>
+          <div className="whitespace-normal break-words">{value || "—"}</div>
         );
       },
     }));
@@ -98,77 +133,60 @@ useEffect(() => {
   // -----------------------------
   return (
     <Card>
-      {/* HEADER + FILTER */}
+      {/* FILTER */}
       <div className="p-4 border-b flex items-center gap-4">
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button
-        variant="outline"
-        className="flex items-center border-2 border-slate-700 gap-2 text-base px-4 py-2"
-      >
-        Campaign ID
-        <ChevronDown className="h-4 w-4" />
-      </Button>
-    </DropdownMenuTrigger>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              className="border-2 border-slate-700 gap-2"
+            >
+              Campaign ID <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
 
-    <DropdownMenuContent
-      align="start"
-      className="w-72 max-h-64 overflow-y-auto"
-    >
-      {/* ✅ SELECT ALL */}
-      <DropdownMenuCheckboxItem
-        checked={isAllCampaignSelected}
-        onCheckedChange={(checked) => {
-          setSelectedCampaignIds(checked ? campaignIds : []);
-        }}
-        onSelect={(e) => e.preventDefault()} // keep open
-        className="font-semibold"
-      >
-        Select All
-      </DropdownMenuCheckboxItem>
+          <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
+            <DropdownMenuCheckboxItem
+              checked={isAllCampaignSelected}
+              onCheckedChange={(checked) =>
+                setSelectedCampaignIds(checked ? campaignIds : [])
+              }
+              onSelect={(e) => e.preventDefault()}
+              className="font-semibold"
+            >
+              Select All
+            </DropdownMenuCheckboxItem>
 
-      <div className="my-1 h-px bg-slate-200" />
+            <div className="my-1 h-px bg-slate-200" />
 
-      {/* INDIVIDUAL CAMPAIGN IDS */}
-      {campaignIds.map((id) => (
-        <DropdownMenuCheckboxItem
-          key={id}
-          checked={selectedCampaignIds.includes(id)}
-          onCheckedChange={(checked) => {
-            setSelectedCampaignIds((prev) =>
-              checked
-                ? [...prev, id]
-                : prev.filter((c) => c !== id)
-            );
-          }}
-          onSelect={(e) => e.preventDefault()} // ⭐ keep open
-        >
-          {id}
-        </DropdownMenuCheckboxItem>
-      ))}
-    </DropdownMenuContent>
-  </DropdownMenu>
-</div>
+            {campaignIds.map((id) => (
+              <DropdownMenuCheckboxItem
+                key={id}
+                checked={selectedCampaignIds.includes(id)}
+                onCheckedChange={(checked) =>
+                  setSelectedCampaignIds((prev) =>
+                    checked ? [...prev, id] : prev.filter((c) => c !== id)
+                  )
+                }
+                onSelect={(e) => e.preventDefault()}
+              >
+                {id}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {/* TABLE */}
       <div className="overflow-auto">
         <Table>
           <TableHeader className="bg-slate-800">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="hover:bg-slate-800">
+              <TableRow key={hg.id}>
                 {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="
-            border-r border-slate-700
-            px-4 py-3
-            text-sm
-            font-bold
-            uppercase
-            tracking-wide
-            text-white
-            last:border-r-0
-          "
+                    className="px-4 py-3 text-white uppercase text-sm font-bold"
                   >
                     {flexRender(
                       header.column.columnDef.header,
@@ -184,29 +202,83 @@ useEffect(() => {
             {table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className="border-r border-slate-200"
-                  >
+                  <TableCell key={cell.id} className="border-r">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>
             ))}
-
-            {filteredData.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="text-center text-muted-foreground py-6"
-                >
-                  No data available
-                </TableCell>
-              </TableRow>
-            )}
           </TableBody>
         </Table>
       </div>
+
+      {/* DIALOG */}
+      <Dialog
+        open={openDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenDialog(false);
+            setSelectedRow(null);
+            setFormData({});
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-4xl"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>View Media Plan</DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="h-[60vh] px-4">
+            <div className="grid grid-cols-2 gap-4">
+              {Object.entries(formData).map(([key, value]) => {
+                const readOnly = MEDIA_PLAN_READ_ONLY_COLUMNS.has(key);
+
+                return (
+                  <div key={key} className="flex flex-col gap-1">
+                    <label className="text-xs text-muted-foreground">
+                      {key}
+                    </label>
+                    <Input
+                      value={value ?? ""}
+                      readOnly={readOnly}
+                      disabled={readOnly}
+                      onChange={(e) => {
+                        if (!readOnly) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            [key]: e.target.value,
+                          }));
+                        }
+                      }}
+                      className={
+                        readOnly
+                          ? "bg-muted cursor-not-allowed text-muted-foreground"
+                          : ""
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button
+              onClick={async () => {
+                await onSubmitMediaPlan(formData);
+                setOpenDialog(false);
+                setSelectedRow(null);
+                setFormData({});
+              }}
+            >
+              Submit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
