@@ -58,7 +58,6 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<CsvRow | null>(null);
   const [formData, setFormData] = useState<CsvRow>({});
 
   // -----------------------------
@@ -101,7 +100,6 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
             <div
               className="cursor-pointer text-slate-900 whitespace-normal break-words"
               onClick={() => {
-                setSelectedRow(row.original);
                 setFormData(row.original); // ✅ FIX
                 setOpenDialog(true);
               }}
@@ -218,7 +216,6 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
         onOpenChange={(open) => {
           if (!open) {
             setOpenDialog(false);
-            setSelectedRow(null);
             setFormData({});
           }
         }}
@@ -270,7 +267,6 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
               onClick={async () => {
                 await onSubmitMediaPlan(formData);
                 setOpenDialog(false);
-                setSelectedRow(null);
                 setFormData({});
               }}
             >
