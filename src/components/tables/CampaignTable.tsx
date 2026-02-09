@@ -85,7 +85,7 @@ useEffect(() => {
       cell: ({ getValue }) => {
         const value = getValue<string>();
         return (
-          <div className="break-words whitespace-normal">
+          <div className="whitespace-normal break-words text-xs md:text-sm min-h-[40px] flex items-center">
             {value || "—"}
           </div>
         );
@@ -110,23 +110,23 @@ useEffect(() => {
   // RENDER
   // -----------------------------
   return (
-    <Card>
-      {/* HEADER + FILTER */}
-      <div className="p-4 border-b flex items-center gap-4">
+    <Card className="overflow-hidden">
+      {/* HEADER + FILTER - Mobile Responsive */}
+      <div className="p-2 md:p-4 border-b flex items-center gap-2 md:gap-4">
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <Button
         variant="outline"
-        className="flex items-center border-2 border-slate-700 gap-2 text-base px-4 py-2"
+        className="flex items-center border-2 border-slate-700 gap-1 md:gap-2 text-xs md:text-base px-3 md:px-4 py-1.5 md:py-2 w-full sm:w-auto"
       >
         Radia ID
-        <ChevronDown className="h-4 w-4" />
+        <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
       </Button>
     </DropdownMenuTrigger>
 
     <DropdownMenuContent
       align="start"
-      className="w-72 max-h-64 overflow-y-auto"
+      className="w-64 md:w-72 max-h-56 md:max-h-64 overflow-y-auto"
     >
       {/* ✅ SELECT ALL */}
       <DropdownMenuCheckboxItem
@@ -135,7 +135,7 @@ useEffect(() => {
           setSelectedRadiaIds(checked ? radiaIds : []);
         }}
         onSelect={(e) => e.preventDefault()}
-        className="font-semibold"
+        className="font-semibold text-xs md:text-sm"
       >
         Select All
       </DropdownMenuCheckboxItem>
@@ -155,6 +155,7 @@ useEffect(() => {
             );
           }}
           onSelect={(e) => e.preventDefault()} // ⭐ keep open
+          className="text-xs md:text-sm"
         >
           {id}
         </DropdownMenuCheckboxItem>
@@ -163,66 +164,85 @@ useEffect(() => {
   </DropdownMenu>
 </div>
 
-      {/* TABLE */}
-      <div className="overflow-auto">
-        <Table>
-        <TableHeader className="bg-slate-800">
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="hover:bg-slate-800">
-                {hg.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="
-            border-r border-slate-700
-            px-4 py-3
-            text-sm
-            font-bold
-            uppercase
-            tracking-wide
-            text-white
-            last:border-r-0
-          "
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
+      {/* TABLE - Mobile Responsive with Text Wrapping */}
+      <div className="overflow-auto -mx-1 md:mx-0">
+  <Table className="w-full">
+    <TableHeader className="bg-slate-800">
+      {table.getHeaderGroups().map((hg) => (
+        <TableRow key={hg.id} className="hover:bg-slate-800">
+          {hg.headers.map((header, index) => (
+            <TableHead
+              key={header.id}
+              className={`
+                border-r border-slate-700
+                px-2 md:px-4
+                py-2 md:py-3
+                text-xs md:text-sm
+                font-bold
+                uppercase
+                tracking-wide
+                text-white
+                whitespace-normal
+                break-words
+                min-w-[100px] md:min-w-[120px]
+                text-center
+                ${index === hg.headers.length - 1 ? 'border-r-0' : ''}
+              `}
+            >
+              <div className="min-h-[40px] flex items-center justify-center">
+                {flexRender(
+                  header.column.columnDef.header,
+                  header.getContext()
+                )}
+              </div>
+            </TableHead>
+          ))}
+        </TableRow>
+      ))}
+    </TableHeader>
 
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    key={cell.id}
-                    className="border-r border-slate-200"
-                  >
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
+    <TableBody>
+      {table.getRowModel().rows.map((row, rowIndex) => (
+        <TableRow 
+          key={row.id} 
+          className={`
+            hover:bg-gray-50
+            ${rowIndex < table.getRowModel().rows.length - 1 ? 'border-b border-gray-200' : ''}
+          `}
+        >
+          {row.getVisibleCells().map((cell, cellIndex) => (
+            <TableCell
+              key={cell.id}
+              className={`
+                border-r border-slate-200
+                px-2 md:px-4
+                py-2 md:py-3
+                min-w-[100px] md:min-w-[120px]
+                ${cellIndex === row.getVisibleCells().length - 1 ? 'border-r-0' : ''}
+              `}
+            >
+              {flexRender(
+                cell.column.columnDef.cell,
+                cell.getContext()
+              )}
+            </TableCell>
+          ))}
+        </TableRow>
+      ))}
 
-            {filteredData.length === 0 && (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="text-center text-muted-foreground py-6"
-                >
-                  No data available
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {filteredData.length === 0 && (
+        <TableRow>
+          <TableCell
+            colSpan={columns.length}
+            className="text-center text-muted-foreground py-4 md:py-6 text-sm md:text-base"
+          >
+            No data available
+          </TableCell>
+        </TableRow>
+      )}
+    </TableBody>
+  </Table>
+</div>
       
     </Card>
   );

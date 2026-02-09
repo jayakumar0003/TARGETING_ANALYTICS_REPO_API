@@ -71,10 +71,12 @@ function CustomDropdown({
   };
 
   const handleSelectAll = () => {
+    // If all options are already selected, deselect all
     if (selectedOptions.length === options.length) {
       onSelectionChange([]);
     } else {
-      onSelectionChange(options);
+      // Otherwise, select all options
+      onSelectionChange([...options]);
     }
   };
 
@@ -86,15 +88,24 @@ function CustomDropdown({
       <button
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`px-4 py-2 border-2 border-slate-700 rounded-md flex items-center gap-2 min-w-[150px] justify-between ${
-          disabled
+        className={`
+          px-3 md:px-4 
+          py-1.5 md:py-2 
+          border-2 border-slate-700 
+          rounded-md 
+          flex items-center gap-1 md:gap-2 
+          min-w-[120px] md:min-w-[150px] 
+          justify-between 
+          text-xs md:text-sm
+          ${disabled
             ? "opacity-50 cursor-not-allowed bg-gray-100"
             : "hover:bg-gray-50 cursor-pointer bg-white"
-        }`}
+          }
+        `}
       >
-        <span className="text-sm font-medium">{label}</span>
+        <span className="font-medium truncate">{label}</span>
         <svg
-          className={`w-4 h-4 transition-transform ${
+          className={`w-3 h-3 md:w-4 md:h-4 transition-transform ${
             isOpen ? "rotate-180" : ""
           }`}
           fill="none"
@@ -111,40 +122,42 @@ function CustomDropdown({
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute z-50 mt-1 w-72 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-y-auto">
-          {/* Select All */}
+        <div className="absolute z-50 mt-1 w-64 md:w-72 bg-white border border-gray-200 rounded-md shadow-lg max-h-56 md:max-h-64 overflow-y-auto">
+          {/* Select All - Always shows "Select All" */}
           <div
             onClick={handleSelectAll}
-            className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 font-semibold"
+            className="flex items-center px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 font-semibold"
           >
             {/* Left checkmark space */}
-            <span className="w-5 mr-2 flex items-center justify-center">
-              {isAllSelected && <Check className="h-4 w-4 text-slate-800" />}
+            <span className="w-4 md:w-5 mr-1 md:mr-2 flex items-center justify-center">
+              {isAllSelected && <Check className="h-3 w-3 md:h-4 md:w-4 text-slate-800" />}
             </span>
-
-            <span className="text-sm">Select All</span>
+            <span className="text-xs md:text-sm">Select All</span>
           </div>
+
+          {/* Divider line */}
+          <div className="border-t border-gray-200"></div>
 
           {/* Options */}
           {options.map((option) => (
-            <div
-              key={option}
-              onClick={() => handleToggleOption(option)}
-              className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
-            >
-              {/* Left checkmark space */}
-              <span className="w-5 mr-2 flex items-center justify-center">
-                {selectedOptions.includes(option) && (
-                  <Check className="h-4 w-4 text-slate-800" />
-                )}
-              </span>
-
-              <span className="text-sm">{option}</span>
+            <div key={option}>
+              <div
+                onClick={() => handleToggleOption(option)}
+                className="flex items-center px-3 md:px-4 py-1.5 md:py-2 hover:bg-gray-100 cursor-pointer"
+              >
+                {/* Left checkmark space */}
+                <span className="w-4 md:w-5 mr-1 md:mr-2 flex items-center justify-center">
+                  {selectedOptions.includes(option) && (
+                    <Check className="h-3 w-3 md:h-4 md:w-4 text-slate-800" />
+                  )}
+                </span>
+                <span className="text-xs md:text-sm truncate">{option}</span>
+              </div>
             </div>
           ))}
 
           {options.length === 0 && (
-            <div className="px-4 py-2 text-sm text-gray-500">
+            <div className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm text-gray-500">
               No options available
             </div>
           )}
@@ -162,132 +175,132 @@ export default function RadiaplanTable({ data }: Props) {
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
 
   // ----------------------------------
-  // GET ALL AVAILABLE OPTIONS
+  // GET ALL AVAILABLE OPTIONS WITH REVERSE FILTERING
   // ----------------------------------
-  const agencyOptions = useMemo(
-    () => Array.from(new Set(data.map((d) => d.AGENCY_NAME).filter(Boolean))),
-    [data]
-  );
-
-  const advertiserOptions = useMemo(() => {
-    if (selectedAgencies.length === 0) {
-      // No agencies selected - show all advertisers
-      return Array.from(
-        new Set(data.map((d) => d.ADVERTISER_NAME).filter(Boolean))
-      );
-    }
-
-    // Filter advertisers based on selected agencies
-    return Array.from(
-      new Set(
-        data
-          .filter((row) => selectedAgencies.includes(row.AGENCY_NAME))
-          .map((r) => r.ADVERTISER_NAME)
-          .filter(Boolean)
-      )
-    );
-  }, [data, selectedAgencies]);
-
+  
+  // 1. Campaign ID options - filtered based on ALL previous selections
   const campaignOptions = useMemo(() => {
-    if (selectedAgencies.length === 0 && selectedAdvertisers.length === 0) {
-      // Nothing selected - show all campaigns
-      return Array.from(
-        new Set(data.map((d) => d.CAMPAIGN_ID).filter(Boolean))
-      );
-    }
-
-    if (selectedAgencies.length === 0) {
-      // Only advertisers selected
-      return Array.from(
-        new Set(
-          data
-            .filter((row) => selectedAdvertisers.includes(row.ADVERTISER_NAME))
-            .map((r) => r.CAMPAIGN_ID)
-            .filter(Boolean)
-        )
-      );
-    }
-
-    if (selectedAdvertisers.length === 0) {
-      // Only agencies selected
-      return Array.from(
-        new Set(
-          data
-            .filter((row) => selectedAgencies.includes(row.AGENCY_NAME))
-            .map((r) => r.CAMPAIGN_ID)
-            .filter(Boolean)
-        )
-      );
-    }
-
-    // Both selected - filter by both
-    return Array.from(
-      new Set(
-        data
-          .filter(
-            (row) =>
-              selectedAgencies.includes(row.AGENCY_NAME) &&
-              selectedAdvertisers.includes(row.ADVERTISER_NAME)
-          )
-          .map((r) => r.CAMPAIGN_ID)
-          .filter(Boolean)
-      )
-    );
-  }, [data, selectedAgencies, selectedAdvertisers]);
-
-  // Initialize with all options selected ONCE
-  const initialized = useRef(false);
-  useEffect(() => {
-    if (!initialized.current && agencyOptions.length > 0) {
-      setSelectedAgencies(agencyOptions);
-      setSelectedAdvertisers(advertiserOptions);
-      setSelectedCampaignIds(campaignOptions);
-      initialized.current = true;
-    }
-  }, [agencyOptions.length]);
-
-  // ----------------------------------
-  // APPLY FILTERS TO GET FINAL DATA
-  // ----------------------------------
-  const filteredData = useMemo(() => {
-    let result = data;
-
-    // Agency filter
-    if (agencyOptions.length > 0) {
-      if (selectedAgencies.length === 0) return [];
-      result = result.filter((row) =>
+    let filteredData = data;
+    
+    // Filter by selected agencies if any
+    if (selectedAgencies.length > 0) {
+      filteredData = filteredData.filter(row => 
         selectedAgencies.includes(row.AGENCY_NAME)
       );
     }
-
-    // Advertiser filter
-    if (advertiserOptions.length > 0) {
-      if (selectedAdvertisers.length === 0) return [];
-      result = result.filter((row) =>
+    
+    // Filter by selected advertisers if any
+    if (selectedAdvertisers.length > 0) {
+      filteredData = filteredData.filter(row => 
         selectedAdvertisers.includes(row.ADVERTISER_NAME)
       );
     }
+    
+    return Array.from(
+      new Set(filteredData.map((d) => d.CAMPAIGN_ID).filter(Boolean))
+    );
+  }, [data, selectedAgencies, selectedAdvertisers]);
 
-    // Campaign filter
-    if (campaignOptions.length > 0) {
-      if (selectedCampaignIds.length === 0) return [];
-      result = result.filter((row) =>
+  // 2. Advertiser options - filtered based on selected agencies AND campaigns
+  const advertiserOptions = useMemo(() => {
+    let filteredData = data;
+    
+    // Filter by selected agencies if any
+    if (selectedAgencies.length > 0) {
+      filteredData = filteredData.filter(row => 
+        selectedAgencies.includes(row.AGENCY_NAME)
+      );
+    }
+    
+    // Filter by selected campaigns if any
+    if (selectedCampaignIds.length > 0) {
+      filteredData = filteredData.filter(row => 
         selectedCampaignIds.includes(row.CAMPAIGN_ID)
       );
     }
+    
+    return Array.from(
+      new Set(filteredData.map((d) => d.ADVERTISER_NAME).filter(Boolean))
+    );
+  }, [data, selectedAgencies, selectedCampaignIds]);
 
-    return result;
-  }, [
-    data,
-    agencyOptions,
-    advertiserOptions,
-    campaignOptions,
-    selectedAgencies,
-    selectedAdvertisers,
-    selectedCampaignIds,
-  ]);
+  // 3. Agency options - filtered based on selected advertisers AND campaigns
+  const agencyOptions = useMemo(() => {
+    let filteredData = data;
+    
+    // Filter by selected advertisers if any
+    if (selectedAdvertisers.length > 0) {
+      filteredData = filteredData.filter(row => 
+        selectedAdvertisers.includes(row.ADVERTISER_NAME)
+      );
+    }
+    
+    // Filter by selected campaigns if any
+    if (selectedCampaignIds.length > 0) {
+      filteredData = filteredData.filter(row => 
+        selectedCampaignIds.includes(row.CAMPAIGN_ID)
+      );
+    }
+    
+    return Array.from(
+      new Set(filteredData.map((d) => d.AGENCY_NAME).filter(Boolean))
+    );
+  }, [data, selectedAdvertisers, selectedCampaignIds]);
+
+  // Initialize with all options selected ONCE when data loads
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (!initialized.current && data.length > 0) {
+      // Get ALL options initially
+      const allAgencies = Array.from(
+        new Set(data.map((d) => d.AGENCY_NAME).filter(Boolean))
+      );
+      const allAdvertisers = Array.from(
+        new Set(data.map((d) => d.ADVERTISER_NAME).filter(Boolean))
+      );
+      const allCampaigns = Array.from(
+        new Set(data.map((d) => d.CAMPAIGN_ID).filter(Boolean))
+      );
+      
+      setSelectedAgencies(allAgencies);
+      setSelectedAdvertisers(allAdvertisers);
+      setSelectedCampaignIds(allCampaigns);
+      initialized.current = true;
+    }
+  }, [data]);
+
   // ----------------------------------
-  // TABLE COLUMNS
+  // APPLY FILTERS TO GET FINAL DATA - UPDATED LOGIC
+  // ----------------------------------
+  const filteredData = useMemo(() => {
+    // If ANY filter has NO selections, return empty array (show "No data")
+    // This ensures when you deselect all in any filter, no data shows
+    if (selectedAgencies.length === 0 || selectedAdvertisers.length === 0 || selectedCampaignIds.length === 0) {
+      return [];
+    }
+    
+    return data.filter(row => {
+      // Agency filter - if agencies are selected, check if row matches
+      if (selectedAgencies.length > 0 && !selectedAgencies.includes(row.AGENCY_NAME)) {
+        return false;
+      }
+      
+      // Advertiser filter - if advertisers are selected, check if row matches
+      if (selectedAdvertisers.length > 0 && !selectedAdvertisers.includes(row.ADVERTISER_NAME)) {
+        return false;
+      }
+      
+      // Campaign filter - if campaigns are selected, check if row matches
+      if (selectedCampaignIds.length > 0 && !selectedCampaignIds.includes(row.CAMPAIGN_ID)) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [data, selectedAgencies, selectedAdvertisers, selectedCampaignIds]);
+
+  // ----------------------------------
+  // TABLE COLUMNS WITH SEPARATION LINES
   // ----------------------------------
   const columns = useMemo<ColumnDef<CsvRow>[]>(() => {
     if (data.length === 0) return [];
@@ -296,7 +309,7 @@ export default function RadiaplanTable({ data }: Props) {
       accessorKey: key,
       header: key,
       cell: ({ getValue }) => (
-        <div className="break-words whitespace-normal">
+        <div className="break-words whitespace-normal text-xs md:text-sm">
           {getValue<string>() || "—"}
         </div>
       ),
@@ -314,9 +327,9 @@ export default function RadiaplanTable({ data }: Props) {
   });
 
   return (
-    <Card>
-      {/* FILTER BAR */}
-      <div className="p-4 border-b flex gap-4 flex-wrap">
+    <Card className="overflow-hidden">
+      {/* FILTER BAR - Mobile Responsive */}
+      <div className="p-2 md:p-4 border-b flex gap-2 md:gap-4 flex-wrap">
         <CustomDropdown
           label="Agency Name"
           options={agencyOptions}
@@ -338,25 +351,37 @@ export default function RadiaplanTable({ data }: Props) {
           options={campaignOptions}
           selectedOptions={selectedCampaignIds}
           onSelectionChange={setSelectedCampaignIds}
-          disabled={selectedAgencies.length === 0 || selectedAdvertisers.length === 0 }
+          disabled={selectedAgencies.length === 0 || selectedAdvertisers.length === 0}
         />
       </div>
 
-      {/* TABLE */}
-      <div className="overflow-auto">
-        <Table>
+      {/* TABLE WITH COLUMN SEPARATION LINES - Mobile Responsive */}
+      <div className="overflow-auto -mx-1 md:mx-0">
+        <Table className="border-separate border-spacing-0 w-full">
           <TableHeader className="bg-slate-800">
             {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((header) => (
+              <TableRow key={hg.id} className="border-0">
+                {hg.headers.map((header, index) => (
                   <TableHead
                     key={header.id}
-                    className="text-white font-bold uppercase"
+                    className={`
+                      text-white 
+                      font-bold 
+                      uppercase 
+                      text-center 
+                      p-2 md:p-4 
+                      text-xs md:text-sm
+                      relative 
+                      min-w-[80px] md:min-w-[100px]
+                      ${index < hg.headers.length - 1 ? 'border-r border-gray-600' : ''}
+                    `}
                   >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
+                    <div className="truncate">
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                    </div>
                   </TableHead>
                 ))}
               </TableRow>
@@ -365,14 +390,31 @@ export default function RadiaplanTable({ data }: Props) {
 
           <TableBody>
             {table.getRowModel().rows.length > 0 ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+              table.getRowModel().rows.map((row, rowIndex) => (
+                <TableRow 
+                  key={row.id} 
+                  className={`
+                    hover:bg-gray-50
+                    ${rowIndex < table.getRowModel().rows.length - 1 ? 'border-b border-gray-200' : ''}
+                  `}
+                >
+                  {row.getVisibleCells().map((cell, index) => (
+                    <TableCell 
+                      key={cell.id} 
+                      className={`
+                        p-2 md:p-4 
+                        relative 
+                        text-xs md:text-sm
+                        min-w-[80px] md:min-w-[100px]
+                        ${index < row.getVisibleCells().length - 1 ? 'border-r border-gray-200' : ''}
+                      `}
+                    >
+                      <div className="truncate">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </div>
                     </TableCell>
                   ))}
                 </TableRow>
@@ -381,7 +423,7 @@ export default function RadiaplanTable({ data }: Props) {
               <TableRow>
                 <TableCell
                   colSpan={columns.length || 1}
-                  className="text-center py-6 text-gray-500"
+                  className="text-center py-4 md:py-6 text-gray-500 text-xs md:text-sm"
                 >
                   No data available with current filters
                 </TableCell>

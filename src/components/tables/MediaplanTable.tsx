@@ -98,7 +98,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
         if (key === "PLACMENT") {
           return (
             <div
-              className="cursor-pointer text-slate-900 whitespace-normal break-words"
+              className="cursor-pointer text-slate-900 whitespace-normal break-words text-xs md:text-sm min-h-[40px] flex items-center"
               onClick={() => {
                 setFormData(row.original); // ✅ FIX
                 setOpenDialog(true);
@@ -110,7 +110,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
         }
 
         return (
-          <div className="whitespace-normal break-words">{value || "—"}</div>
+          <div className="whitespace-normal break-words text-xs md:text-sm min-h-[40px] flex items-center">{value || "—"}</div>
         );
       },
     }));
@@ -130,27 +130,27 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
   // RENDER
   // -----------------------------
   return (
-    <Card>
-      {/* FILTER */}
-      <div className="p-4 border-b flex items-center gap-4">
+    <Card className="overflow-hidden">
+      {/* FILTER - Mobile Responsive */}
+      <div className="p-2 md:p-4 border-b flex items-center gap-2 md:gap-4 flex-wrap">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="border-2 border-slate-700 gap-2"
+              className="border-2 border-slate-700 gap-1 md:gap-2 text-xs md:text-base px-3 md:px-4 py-1.5 md:py-2 w-full sm:w-auto"
             >
-              Campaign ID <ChevronDown className="h-4 w-4" />
+              Campaign ID <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
+          <DropdownMenuContent className="w-64 md:w-72 max-h-56 md:max-h-64 overflow-y-auto">
             <DropdownMenuCheckboxItem
               checked={isAllCampaignSelected}
               onCheckedChange={(checked) =>
                 setSelectedCampaignIds(checked ? campaignIds : [])
               }
               onSelect={(e) => e.preventDefault()}
-              className="font-semibold"
+              className="font-semibold text-xs md:text-sm"
             >
               Select All
             </DropdownMenuCheckboxItem>
@@ -167,6 +167,7 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                   )
                 }
                 onSelect={(e) => e.preventDefault()}
+                className="text-xs md:text-sm"
               >
                 {id}
               </DropdownMenuCheckboxItem>
@@ -175,42 +176,82 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
         </DropdownMenu>
       </div>
 
-      {/* TABLE */}
-      <div className="overflow-auto">
-        <Table>
-          <TableHeader className="bg-slate-800">
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id}>
-                {hg.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="px-4 py-3 text-white uppercase text-sm font-bold"
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-
+      {/* TABLE - Mobile Responsive with Text Wrapping */}
+      <div className="overflow-auto -mx-1 md:mx-0">
+        <Table className="w-full">
+        <TableHeader className="bg-slate-800">
+      {table.getHeaderGroups().map((hg) => (
+        <TableRow key={hg.id} className="hover:bg-slate-800">
+          {hg.headers.map((header, index) => (
+            <TableHead
+              key={header.id}
+              className={`
+                border-r border-slate-700
+                px-2 md:px-4
+                py-2 md:py-3
+                text-xs md:text-sm
+                font-bold
+                uppercase
+                tracking-wide
+                text-white
+                whitespace-normal
+                break-words
+                min-w-[100px] md:min-w-[120px]
+                text-center
+                ${index === hg.headers.length - 1 ? 'border-r-0' : ''}
+              `}
+            >
+              <div className="min-h-[40px] flex items-center justify-center">
+                {flexRender(
+                  header.column.columnDef.header,
+                  header.getContext()
+                )}
+              </div>
+            </TableHead>
+          ))}
+        </TableRow>
+      ))}
+    </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id} className="border-r">
+            {table.getRowModel().rows.map((row, rowIndex) => (
+              <TableRow 
+                key={row.id} 
+                className={`
+                  hover:bg-gray-50
+                  ${rowIndex < table.getRowModel().rows.length - 1 ? 'border-b border-gray-200' : ''}
+                `}
+              >
+                {row.getVisibleCells().map((cell, cellIndex) => (
+                  <TableCell 
+                    key={cell.id} 
+                    className={`
+                      px-2 md:px-4 
+                      py-2 md:py-3
+                      min-w-[100px] md:min-w-[120px]
+                      ${cellIndex < row.getVisibleCells().length - 1 ? 'border-r border-gray-200' : ''}
+                    `}
+                  >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>
             ))}
+
+            {filteredData.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center text-muted-foreground py-4 md:py-6 text-sm md:text-base"
+                >
+                  No data available
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
 
-      {/* DIALOG */}
+      {/* DIALOG - Mobile Responsive */}
       <Dialog
         open={openDialog}
         onOpenChange={(open) => {
@@ -221,21 +262,21 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
         }}
       >
         <DialogContent
-          className="max-w-4xl"
+          className="max-w-[95vw] md:max-w-4xl w-full mx-2 md:mx-auto"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>View Media Plan</DialogTitle>
+            <DialogTitle className="text-lg md:text-xl">View Media Plan</DialogTitle>
           </DialogHeader>
 
-          <ScrollArea className="h-[60vh] px-4">
-            <div className="grid grid-cols-2 gap-4">
+          <ScrollArea className="h-[50vh] md:h-[60vh] px-2 md:px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               {Object.entries(formData).map(([key, value]) => {
                 const readOnly = MEDIA_PLAN_READ_ONLY_COLUMNS.has(key);
 
                 return (
                   <div key={key} className="flex flex-col gap-1">
-                    <label className="text-xs text-muted-foreground">
+                    <label className="text-xs md:text-sm text-muted-foreground whitespace-normal break-words">
                       {key}
                     </label>
                     <Input
@@ -250,11 +291,13 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
                           }));
                         }
                       }}
-                      className={
-                        readOnly
+                      className={`
+                        text-xs md:text-sm
+                        ${readOnly
                           ? "bg-muted cursor-not-allowed text-muted-foreground"
                           : ""
-                      }
+                        }
+                      `}
                     />
                   </div>
                 );
@@ -262,13 +305,24 @@ export default function MediaplanTable({ data, onSubmitMediaPlan }: Props) {
             </div>
           </ScrollArea>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 md:gap-4 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOpenDialog(false);
+                setFormData({});
+              }}
+              className="w-full sm:w-auto text-xs md:text-sm"
+            >
+              Cancel
+            </Button>
             <Button
               onClick={async () => {
                 await onSubmitMediaPlan(formData);
                 setOpenDialog(false);
                 setFormData({});
               }}
+              className="w-full sm:w-auto text-xs md:text-sm"
             >
               Submit
             </Button>

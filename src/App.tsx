@@ -3,7 +3,6 @@ import TargetingAndAnalyicsTable from "./components/tables/TargetingAndAnalyicsT
 import "./index.css";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Loader2 } from "lucide-react";
-import img from "../public/WPP_1-removebg-preview.png"
 import {
   fetchTargetingApi,
   updateByPackageApi,
@@ -12,10 +11,14 @@ import {
 } from "./api/targeting.api";
 import CampaignTable from "./components/tables/CampaignTable";
 import { fetchCampaignApi } from "./api/campaign.api";
-import { fetchMediaPlanApi, updateMediaPlanAndTargetingApi } from "./api/mediaplan.api";
+import {
+  fetchMediaPlanApi,
+  updateMediaPlanAndTargetingApi,
+} from "./api/mediaplan.api";
 import { fetchRadiaPlanApi } from "./api/radiaplan.api";
 import RadiaplanTable from "./components/tables/RadiaplanTable";
 import MediaplanTable from "./components/tables/MediaplanTable";
+import Header from "./components/Header";
 
 function App() {
   const [targetingdata, setTargetingData] = useState<CsvRow[]>([]);
@@ -25,14 +28,18 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [activeTab, setActiveTab] = useState<
+    "radiaPlan" | "targeting" | "campaign" | "mediaPlan"
+  >("radiaPlan");
+
   // -----------------------------
   // LOAD DATA
   // -----------------------------
   useEffect(() => {
-    loadRadiaPlanData()
+    loadRadiaPlanData();
     loadTargetingData();
-    loadCampaignData()
-    loadMediaPlanData()
+    loadCampaignData();
+    loadMediaPlanData();
   }, []);
 
   async function loadTargetingData() {
@@ -65,7 +72,7 @@ function App() {
     try {
       setLoading(true);
       setError(null);
-  
+
       const data = await fetchRadiaPlanApi();
       setRadiaPlanData(data);
     } catch (err) {
@@ -79,7 +86,7 @@ function App() {
     try {
       setLoading(true);
       setError(null);
-  
+
       const data = await fetchMediaPlanApi();
       setMediaPlanData(data);
     } catch (err) {
@@ -88,8 +95,6 @@ function App() {
       setLoading(false);
     }
   }
-  
-
   // -----------------------------
   // UPDATE HANDLERS
   // -----------------------------
@@ -118,7 +123,7 @@ function App() {
     try {
       await updateMediaPlanAndTargetingApi(payload);
       await loadTargetingData();
-      await loadMediaPlanData()
+      await loadMediaPlanData();
     } catch (err) {
       alert("Failed to update package");
       throw err;
@@ -126,8 +131,6 @@ function App() {
   }
 
 
-
-  const title = "Single Source Of Truth";
   // -----------------------------
   // UI STATES
   // -----------------------------
@@ -141,68 +144,35 @@ function App() {
   if (error) {
     return <div className="p-6 text-red-600">{error}</div>;
   }
+
+
   // -----------------------------
   // RENDER
   // -----------------------------
   return (
     <div className="min-h-screen bg-white">
-      <div className="bg-slate-800 px-20 py-4 flex items-center justify-between">
-  {/* LEFT SIDE — TITLE */}
- 
+      {/* HEADER - Minimal & Elegant Design */}
+        <Header />
 
-  <div className="flex flex-col items-center">
-  <h1 className="flex flex-wrap text-2xl font-bold">
-    {title.split(" ").map((word, wordIndex) => (
-      <span key={wordIndex} className="mr-3 flex">
-        {word.split("").map((char, charIndex) => (
-          <span
-            key={charIndex}
-            className="
-              bg-gradient-to-b
-              from-white
-              to-slate-300
-              bg-clip-text
-              text-transparent
-              drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]
-              tracking-wide
-            "
-          >
-            {char}
-          </span>
-        ))}
-      </span>
-    ))}
-  </h1>
-
-  {/* subtle underline */}
-  <div className="mt-1 h-[2px] w-72 bg-gradient-to-r from-transparent via-slate-400 to-transparent" />
-</div>
-
-  {/* RIGHT SIDE — LOGO */}
-  <div className="flex items-center gap-3">
-    
-    <img
-      src={img}
-      alt="WPP Logo"
-      className="h-12 object-contain"
-    />
-  </div>
-</div>
-      
-      <div className="max-w-8xl mx-auto mt-6 px-4">
-        <Tabs defaultValue="radiaPlan" className="w-full">
-          {/* TAB HEADER */}
-          <div className="flex items-center gap-3 border-b">
-            <TabsList className="bg-transparent p-0 !shadow-none !border-none">
-            <TabsTrigger
+      {/* MAIN CONTENT - Mobile Responsive */}
+      <div className="max-w-8xl mx-auto mt-4 md:mt-6 px-3 md:px-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+          className="w-full"
+        >
+          {/* TAB HEADER - Mobile Responsive */}
+          <div className="flex items-center gap-3 border-b overflow-x-auto">
+            <TabsList className="bg-transparent p-0 !shadow-none !border-none flex-nowrap whitespace-nowrap min-w-max md:overflow-hidden lg:overflow-hidden">
+              <TabsTrigger
                 value="radiaPlan"
                 className="
-            px-4 py-2
-            font-bold text-sm
+            px-3 md:px-4 py-2
+            font-bold text-xs md:text-sm
             rounded-none
             border-b-2
             !shadow-none
-
+            min-w-max
             data-[state=active]:border-slate-800
             data-[state=active]:text-slate-800
             data-[state=inactive]:border-transparent
@@ -215,12 +185,12 @@ function App() {
               <TabsTrigger
                 value="targeting"
                 className="
-            px-4 py-2
-            font-bold text-sm
+            px-3 md:px-4 py-2
+            font-bold text-xs md:text-sm
             rounded-none
             border-b-2
             !shadow-none
-
+            min-w-max
             data-[state=active]:border-slate-800
             data-[state=active]:text-slate-800
             data-[state=inactive]:border-transparent
@@ -233,12 +203,12 @@ function App() {
               <TabsTrigger
                 value="campaign"
                 className="
-            px-4 py-2
-            font-bold text-sm
+            px-3 md:px-4 py-2
+            font-bold text-xs md:text-sm
             rounded-none
             border-b-2
             !shadow-none
-
+            min-w-max
             data-[state=active]:border-slate-800
             data-[state=active]:text-slate-800
             data-[state=inactive]:border-transparent
@@ -248,16 +218,16 @@ function App() {
               >
                 Campaign Overview
               </TabsTrigger>
-              
+
               <TabsTrigger
                 value="mediaPlan"
                 className="
-            px-4 py-2
-            font-bold text-sm
+            px-3 md:px-4 py-2
+            font-bold text-xs md:text-sm
             rounded-none
             border-b-2
             !shadow-none
-
+            min-w-max
             data-[state=active]:border-slate-800
             data-[state=active]:text-slate-800
             data-[state=inactive]:border-transparent
@@ -270,26 +240,25 @@ function App() {
           </div>
 
           {/* TAB CONTENT */}
-          
-          <TabsContent value="radiaPlan" className="mt-6">
-            <RadiaplanTable data={radiaPlanData}/>
+          <TabsContent value="radiaPlan" className="mt-4 md:mt-6">
+            <RadiaplanTable data={radiaPlanData} />
           </TabsContent>
-          <TabsContent value="targeting" className="mt-6">
+          <TabsContent value="targeting" className="mt-4 md:mt-6">
             <TargetingAndAnalyicsTable
               data={targetingdata}
               onUpdateByPackage={updateByPackage}
               onUpdateByPackageAndPlacement={updateByPackageAndPlacement}
             />
           </TabsContent>
-          <TabsContent value="campaign" className="mt-6">
-            <CampaignTable data={campaignData}/>
+          <TabsContent value="campaign" className="mt-4 md:mt-6">
+            <CampaignTable data={campaignData} />
           </TabsContent>
-          <TabsContent value="mediaPlan" className="mt-6">
-  <MediaplanTable
-    data={mediaPlanData}
-    onSubmitMediaPlan={updateMediaPlanAndTargeting}
-  />
-</TabsContent>
+          <TabsContent value="mediaPlan" className="mt-4 md:mt-6">
+            <MediaplanTable
+              data={mediaPlanData}
+              onSubmitMediaPlan={updateMediaPlanAndTargeting}
+            />
+          </TabsContent>
         </Tabs>
       </div>
     </div>

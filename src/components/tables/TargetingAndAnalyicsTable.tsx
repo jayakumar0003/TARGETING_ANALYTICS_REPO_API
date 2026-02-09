@@ -133,7 +133,11 @@ export default function TargetingAndAnalyicsTable({
       header: key,
       cell: ({ row }) => {
         const value = row.getValue(key) as string;
-        return <div className="break-words">{value || "—"}</div>;
+        return (
+          <div className="whitespace-normal break-words text-xs md:text-sm min-h-[40px] flex items-center">
+            {value || "—"}
+          </div>
+        );
       },
     }));
   }, [data]);
@@ -149,29 +153,29 @@ export default function TargetingAndAnalyicsTable({
   });
 
   return (
-    <Card>
-      {/* hear filter*/}
-      <div className="p-4 border-b flex items-center gap-4">
+    <Card className="overflow-hidden">
+      {/* FILTER BAR - Mobile Responsive */}
+      <div className="p-2 md:p-4 border-b flex items-center gap-2 md:gap-4 flex-wrap">
         {/* ================= AGENCY NAME ================= */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="flex items-center border-2 border-slate-700 gap-2 text-base px-4 py-2"
+              className="flex items-center border-2 border-slate-700 gap-1 md:gap-2 text-xs md:text-base px-3 md:px-4 py-1.5 md:py-2 w-full sm:w-auto"
             >
               Agency Name
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
+          <DropdownMenuContent className="w-64 md:w-72 max-h-56 md:max-h-64 overflow-y-auto">
             <DropdownMenuCheckboxItem
               checked={selectedAgencies.length === SAMPLE_AGENCIES.length}
               onCheckedChange={(checked) =>
                 setSelectedAgencies(checked ? SAMPLE_AGENCIES : [])
               }
               onSelect={(e) => e.preventDefault()}
-              className="font-semibold"
+              className="font-semibold text-xs md:text-sm"
             >
               Select All
             </DropdownMenuCheckboxItem>
@@ -190,6 +194,7 @@ export default function TargetingAndAnalyicsTable({
                   )
                 }
                 onSelect={(e) => e.preventDefault()}
+                className="text-xs md:text-sm"
               >
                 {agency}
               </DropdownMenuCheckboxItem>
@@ -202,21 +207,21 @@ export default function TargetingAndAnalyicsTable({
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              className="flex items-center border-2 border-slate-700 gap-2 text-base px-4 py-2"
+              className="flex items-center border-2 border-slate-700 gap-1 md:gap-2 text-xs md:text-base px-3 md:px-4 py-1.5 md:py-2 w-full sm:w-auto"
             >
               Advertiser Name
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent className="w-72 max-h-64 overflow-y-auto">
+          <DropdownMenuContent className="w-64 md:w-72 max-h-56 md:max-h-64 overflow-y-auto">
             <DropdownMenuCheckboxItem
               checked={selectedAdvertisers.length === SAMPLE_ADVERTISERS.length}
               onCheckedChange={(checked) =>
                 setSelectedAdvertisers(checked ? SAMPLE_ADVERTISERS : [])
               }
               onSelect={(e) => e.preventDefault()}
-              className="font-semibold"
+              className="font-semibold text-xs md:text-sm"
             >
               Select All
             </DropdownMenuCheckboxItem>
@@ -233,6 +238,7 @@ export default function TargetingAndAnalyicsTable({
                   )
                 }
                 onSelect={(e) => e.preventDefault()}
+                className="text-xs md:text-sm"
               >
                 {adv}
               </DropdownMenuCheckboxItem>
@@ -240,46 +246,67 @@ export default function TargetingAndAnalyicsTable({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {/* TABLE */}
-      <div className="overflow-auto">
-        <Table>
-          <TableHeader className="bg-slate-800">
-            {table.getHeaderGroups().map((hg) => (
-              <TableRow key={hg.id} className="hover:bg-slate-800">
-                {hg.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="
-            border-r border-slate-700
-            px-4 py-3
-            text-sm
-            font-bold
-            uppercase
-            tracking-wide
-            text-white
-            last:border-r-0
-          "
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
+      
+      {/* TABLE - Mobile Responsive */}
+      <div className="overflow-auto -mx-1 md:mx-0">
+        <Table className="w-full">
+        <TableHeader className="bg-slate-800">
+      {table.getHeaderGroups().map((hg) => (
+        <TableRow key={hg.id} className="hover:bg-slate-800">
+          {hg.headers.map((header, index) => (
+            <TableHead
+              key={header.id}
+              className={`
+                border-r border-slate-700
+                px-2 md:px-4
+                py-2 md:py-3
+                text-xs md:text-sm
+                font-bold
+                uppercase
+                tracking-wide
+                text-white
+                whitespace-normal
+                break-words
+                min-w-[100px] md:min-w-[120px]
+                text-center
+                ${index === hg.headers.length - 1 ? 'border-r-0' : ''}
+              `}
+            >
+              <div className="min-h-[40px] flex items-center justify-center">
+                {flexRender(
+                  header.column.columnDef.header,
+                  header.getContext()
+                )}
+              </div>
+            </TableHead>
+          ))}
+        </TableRow>
+      ))}
+    </TableHeader>
 
           <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => {
+            {table.getRowModel().rows.map((row, rowIndex) => (
+              <TableRow 
+                key={row.id} 
+                className={`
+                  hover:bg-gray-50
+                  ${rowIndex < table.getRowModel().rows.length - 1 ? 'border-b border-gray-200' : ''}
+                `}
+              >
+                {row.getVisibleCells().map((cell, cellIndex) => {
                   const columnId = cell.column.id;
 
                   return (
                     <TableCell
                       key={cell.id}
-                      className="border-r border-slate-200 cursor-pointer"
+                      className={`
+                        border-r border-slate-200 
+                        cursor-pointer
+                        px-2 md:px-4
+                        py-2 md:py-3
+                        min-w-[100px] md:min-w-[120px]
+                        ${cellIndex === row.getVisibleCells().length - 1 ? 'border-r-0' : ''}
+                      `}
                       onClick={() => handleCellClick(columnId, row.original)}
                     >
                       {flexRender(
@@ -295,7 +322,7 @@ export default function TargetingAndAnalyicsTable({
         </Table>
       </div>
 
-      {/* EDIT FORM */}
+      {/* EDIT FORM - Mobile Responsive */}
       <Dialog
         open={!!editMode}
         onOpenChange={(open) => {
@@ -306,19 +333,19 @@ export default function TargetingAndAnalyicsTable({
         }}
       >
         <DialogContent
-          className="max-w-4xl"
+          className="max-w-[95vw] md:max-w-4xl w-full mx-2 md:mx-auto"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-lg md:text-xl">
               {editMode === "PACKAGE"
-                ? "Edit Package"
-                : "Edit Package & Placement"}
+                ? "Edit Based On Package"
+                : "Edit Based On Package & Placement"}
             </DialogTitle>
           </DialogHeader>
 
-          <ScrollArea className="h-[60vh] px-4">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+          <ScrollArea className="h-[50vh] md:h-[60vh] px-2 md:px-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 md:gap-x-4 gap-y-4 md:gap-y-6">
               {Object.entries(formData).map(([key, value]) => {
                 const readOnly =
                   editMode === "PACKAGE"
@@ -326,8 +353,8 @@ export default function TargetingAndAnalyicsTable({
                     : PACKAGE_AND_PLACEMENT_READ_ONLY_COLUMNS.has(key);
 
                 return (
-                  <div key={key} className="flex flex-col gap-2 pb-1 px-1">
-                    <label className="text-xs text-muted-foreground">
+                  <div key={key} className="flex flex-col gap-1 md:gap-2 pb-1 px-1">
+                    <label className="text-xs md:text-sm text-muted-foreground whitespace-normal break-words">
                       {key}
                     </label>
 
@@ -336,11 +363,14 @@ export default function TargetingAndAnalyicsTable({
                       value={value ?? ""}
                       readOnly={readOnly}
                       disabled={readOnly}
-                      className={`focus-visible:ring-offset-2 ${
-                        readOnly
+                      className={`
+                        focus-visible:ring-offset-2 
+                        text-xs md:text-sm
+                        ${readOnly
                           ? "bg-muted cursor-not-allowed text-muted-foreground"
                           : ""
-                      }`}
+                        }
+                      `}
                       onChange={(e) => {
                         if (!readOnly) {
                           setFormData((prev) => ({
@@ -356,7 +386,17 @@ export default function TargetingAndAnalyicsTable({
             </div>
           </ScrollArea>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 md:gap-4 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditMode(null);
+                setFormData({});
+              }}
+              className="w-full sm:w-auto text-xs md:text-sm"
+            >
+              Cancel
+            </Button>
             <Button
               onClick={async () => {
                 try {
@@ -372,6 +412,7 @@ export default function TargetingAndAnalyicsTable({
                   alert("Update failed");
                 }
               }}
+              className="w-full sm:w-auto text-xs md:text-sm"
             >
               Save Changes
             </Button>
