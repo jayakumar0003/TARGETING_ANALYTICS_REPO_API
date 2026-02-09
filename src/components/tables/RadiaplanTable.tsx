@@ -97,9 +97,10 @@ function CustomDropdown({
           min-w-[120px] md:min-w-[150px] 
           justify-between 
           text-xs md:text-sm
-          ${disabled
-            ? "opacity-50 cursor-not-allowed bg-gray-100"
-            : "hover:bg-gray-50 cursor-pointer bg-white"
+          ${
+            disabled
+              ? "opacity-50 cursor-not-allowed bg-gray-100"
+              : "hover:bg-gray-50 cursor-pointer bg-white"
           }
         `}
       >
@@ -130,7 +131,9 @@ function CustomDropdown({
           >
             {/* Left checkmark space */}
             <span className="w-4 md:w-5 mr-1 md:mr-2 flex items-center justify-center">
-              {isAllSelected && <Check className="h-3 w-3 md:h-4 md:w-4 text-slate-800" />}
+              {isAllSelected && (
+                <Check className="h-3 w-3 md:h-4 md:w-4 text-slate-800" />
+              )}
             </span>
             <span className="text-xs md:text-sm">Select All</span>
           </div>
@@ -177,25 +180,25 @@ export default function RadiaplanTable({ data }: Props) {
   // ----------------------------------
   // GET ALL AVAILABLE OPTIONS WITH REVERSE FILTERING
   // ----------------------------------
-  
+
   // 1. Campaign ID options - filtered based on ALL previous selections
   const campaignOptions = useMemo(() => {
     let filteredData = data;
-    
+
     // Filter by selected agencies if any
     if (selectedAgencies.length > 0) {
-      filteredData = filteredData.filter(row => 
+      filteredData = filteredData.filter((row) =>
         selectedAgencies.includes(row.AGENCY_NAME)
       );
     }
-    
+
     // Filter by selected advertisers if any
     if (selectedAdvertisers.length > 0) {
-      filteredData = filteredData.filter(row => 
+      filteredData = filteredData.filter((row) =>
         selectedAdvertisers.includes(row.ADVERTISER_NAME)
       );
     }
-    
+
     return Array.from(
       new Set(filteredData.map((d) => d.CAMPAIGN_ID).filter(Boolean))
     );
@@ -204,21 +207,21 @@ export default function RadiaplanTable({ data }: Props) {
   // 2. Advertiser options - filtered based on selected agencies AND campaigns
   const advertiserOptions = useMemo(() => {
     let filteredData = data;
-    
+
     // Filter by selected agencies if any
     if (selectedAgencies.length > 0) {
-      filteredData = filteredData.filter(row => 
+      filteredData = filteredData.filter((row) =>
         selectedAgencies.includes(row.AGENCY_NAME)
       );
     }
-    
+
     // Filter by selected campaigns if any
     if (selectedCampaignIds.length > 0) {
-      filteredData = filteredData.filter(row => 
+      filteredData = filteredData.filter((row) =>
         selectedCampaignIds.includes(row.CAMPAIGN_ID)
       );
     }
-    
+
     return Array.from(
       new Set(filteredData.map((d) => d.ADVERTISER_NAME).filter(Boolean))
     );
@@ -227,21 +230,21 @@ export default function RadiaplanTable({ data }: Props) {
   // 3. Agency options - filtered based on selected advertisers AND campaigns
   const agencyOptions = useMemo(() => {
     let filteredData = data;
-    
+
     // Filter by selected advertisers if any
     if (selectedAdvertisers.length > 0) {
-      filteredData = filteredData.filter(row => 
+      filteredData = filteredData.filter((row) =>
         selectedAdvertisers.includes(row.ADVERTISER_NAME)
       );
     }
-    
+
     // Filter by selected campaigns if any
     if (selectedCampaignIds.length > 0) {
-      filteredData = filteredData.filter(row => 
+      filteredData = filteredData.filter((row) =>
         selectedCampaignIds.includes(row.CAMPAIGN_ID)
       );
     }
-    
+
     return Array.from(
       new Set(filteredData.map((d) => d.AGENCY_NAME).filter(Boolean))
     );
@@ -261,7 +264,7 @@ export default function RadiaplanTable({ data }: Props) {
       const allCampaigns = Array.from(
         new Set(data.map((d) => d.CAMPAIGN_ID).filter(Boolean))
       );
-      
+
       setSelectedAgencies(allAgencies);
       setSelectedAdvertisers(allAdvertisers);
       setSelectedCampaignIds(allCampaigns);
@@ -275,26 +278,39 @@ export default function RadiaplanTable({ data }: Props) {
   const filteredData = useMemo(() => {
     // If ANY filter has NO selections, return empty array (show "No data")
     // This ensures when you deselect all in any filter, no data shows
-    if (selectedAgencies.length === 0 || selectedAdvertisers.length === 0 || selectedCampaignIds.length === 0) {
+    if (
+      selectedAgencies.length === 0 ||
+      selectedAdvertisers.length === 0 ||
+      selectedCampaignIds.length === 0
+    ) {
       return [];
     }
-    
-    return data.filter(row => {
+
+    return data.filter((row) => {
       // Agency filter - if agencies are selected, check if row matches
-      if (selectedAgencies.length > 0 && !selectedAgencies.includes(row.AGENCY_NAME)) {
+      if (
+        selectedAgencies.length > 0 &&
+        !selectedAgencies.includes(row.AGENCY_NAME)
+      ) {
         return false;
       }
-      
+
       // Advertiser filter - if advertisers are selected, check if row matches
-      if (selectedAdvertisers.length > 0 && !selectedAdvertisers.includes(row.ADVERTISER_NAME)) {
+      if (
+        selectedAdvertisers.length > 0 &&
+        !selectedAdvertisers.includes(row.ADVERTISER_NAME)
+      ) {
         return false;
       }
-      
+
       // Campaign filter - if campaigns are selected, check if row matches
-      if (selectedCampaignIds.length > 0 && !selectedCampaignIds.includes(row.CAMPAIGN_ID)) {
+      if (
+        selectedCampaignIds.length > 0 &&
+        !selectedCampaignIds.includes(row.CAMPAIGN_ID)
+      ) {
         return false;
       }
-      
+
       return true;
     });
   }, [data, selectedAgencies, selectedAdvertisers, selectedCampaignIds]);
@@ -335,7 +351,9 @@ export default function RadiaplanTable({ data }: Props) {
           options={agencyOptions}
           selectedOptions={selectedAgencies}
           onSelectionChange={setSelectedAgencies}
-          disabled={selectedAdvertisers.length === 0 || selectedCampaignIds.length === 0}
+          disabled={
+            selectedAdvertisers.length === 0 || selectedCampaignIds.length === 0
+          }
         />
 
         <CustomDropdown
@@ -343,7 +361,9 @@ export default function RadiaplanTable({ data }: Props) {
           options={advertiserOptions}
           selectedOptions={selectedAdvertisers}
           onSelectionChange={setSelectedAdvertisers}
-          disabled={selectedAgencies.length === 0 || selectedCampaignIds.length === 0}
+          disabled={
+            selectedAgencies.length === 0 || selectedCampaignIds.length === 0
+          }
         />
 
         <CustomDropdown
@@ -351,7 +371,9 @@ export default function RadiaplanTable({ data }: Props) {
           options={campaignOptions}
           selectedOptions={selectedCampaignIds}
           onSelectionChange={setSelectedCampaignIds}
-          disabled={selectedAgencies.length === 0 || selectedAdvertisers.length === 0}
+          disabled={
+            selectedAgencies.length === 0 || selectedAdvertisers.length === 0
+          }
         />
       </div>
 
@@ -373,7 +395,11 @@ export default function RadiaplanTable({ data }: Props) {
                       text-xs md:text-sm
                       relative 
                       min-w-[80px] md:min-w-[100px]
-                      ${index < hg.headers.length - 1 ? 'border-r border-gray-600' : ''}
+                      ${
+                        index < hg.headers.length - 1
+                          ? "border-r border-gray-600"
+                          : ""
+                      }
                     `}
                   >
                     <div className="truncate">
@@ -391,23 +417,26 @@ export default function RadiaplanTable({ data }: Props) {
           <TableBody>
             {table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row, rowIndex) => (
-                <TableRow 
-                  key={row.id} 
-                  className={`
-                    hover:bg-gray-50
-                    ${rowIndex < table.getRowModel().rows.length - 1 ? 'border-b border-gray-200' : ''}
-                  `}
-                >
+                <TableRow key={row.id} className="hover:bg-gray-50">
                   {row.getVisibleCells().map((cell, index) => (
-                    <TableCell 
-                      key={cell.id} 
+                    <TableCell
+                      key={cell.id}
                       className={`
-                        p-2 md:p-4 
-                        relative 
-                        text-xs md:text-sm
-                        min-w-[80px] md:min-w-[100px]
-                        ${index < row.getVisibleCells().length - 1 ? 'border-r border-gray-200' : ''}
-                      `}
+              p-2 md:p-4 
+              relative 
+              text-xs md:text-sm
+              min-w-[80px] md:min-w-[100px]
+              ${
+                index < row.getVisibleCells().length - 1
+                  ? "border-r border-gray-200"
+                  : ""
+              }
+              ${
+                rowIndex < table.getRowModel().rows.length - 1
+                  ? "border-b border-gray-200"
+                  : ""
+              }
+            `}
                     >
                       <div className="truncate">
                         {flexRender(

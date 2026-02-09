@@ -117,7 +117,6 @@ function App() {
       throw err;
     }
   }
-
   // Update form in Media plan
   async function updateMediaPlanAndTargeting(payload: CsvRow) {
     try {
@@ -170,7 +169,7 @@ function App() {
             px-3 md:px-4 py-2
             font-bold text-xs md:text-sm
             rounded-none
-            border-b-2
+            border-b-4
             !shadow-none
             min-w-max
             data-[state=active]:border-slate-800
@@ -188,7 +187,7 @@ function App() {
             px-3 md:px-4 py-2
             font-bold text-xs md:text-sm
             rounded-none
-            border-b-2
+            border-b-4
             !shadow-none
             min-w-max
             data-[state=active]:border-slate-800
@@ -206,7 +205,7 @@ function App() {
             px-3 md:px-4 py-2
             font-bold text-xs md:text-sm
             rounded-none
-            border-b-2
+            border-b-4
             !shadow-none
             min-w-max
             data-[state=active]:border-slate-800
@@ -225,7 +224,7 @@ function App() {
             px-3 md:px-4 py-2
             font-bold text-xs md:text-sm
             rounded-none
-            border-b-2
+            border-b-4
             !shadow-none
             min-w-max
             data-[state=active]:border-slate-800
@@ -264,5 +263,4 @@ function App() {
     </div>
   );
 }
-
 export default App;

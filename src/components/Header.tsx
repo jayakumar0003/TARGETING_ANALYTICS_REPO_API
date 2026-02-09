@@ -11,15 +11,15 @@ const Header: React.FC<HeaderProps> = ({
   
   const renderTitleWithLargeFirstLetters = (text: string): React.ReactNode => {
     return text.split(' ').map((word, index) => (
-      <span key={index} className="inline-block mr-2">
-        <span className="text-3xl md:text-5xl font-bold">{word.charAt(0)}</span>
-        <span className="text-2xl md:text-4xl">{word.slice(1)}</span>
+      <span key={index} className="inline-block mr-4">
+        <span className="text-2xl md:text-4xl lg:text-5xl font-bold">{word.charAt(0)}</span>
+        <span className="text-lg md:text-2xl lg:text-4xl">{word.slice(1)}</span>
       </span>
     ));
   };
 
   return (
-    <div className="relative px-4 md:px-8 lg:px-10 py-3 md:py-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+    <div className="relative px-4 md:px-8 lg:px-10 py-3 md:py-3 lg:py-3 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
   {/* Subtle Grid Background */}
   <div
     className="absolute inset-0 opacity-[0.06]"
@@ -40,20 +40,20 @@ const Header: React.FC<HeaderProps> = ({
     {/* TITLE - with enlarged first letters */}
     <div className="flex flex-col justify-center">
       <div className="relative inline-block">
-        <h1 className="text-2xl md:text-4xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 font-mono">
+        <h1 className="text-sx md:text-3xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 font-mono">
           {renderTitleWithLargeFirstLetters(title)}
         </h1>
-        <div className="mt-1 h-[2px] ml-8 w-10/12 bg-gradient-to-r from-transparent via-slate-400 to-transparent" />
+        <div className="mt-1 h-[2px] ml-8 w-10/12 bg-gradient-to-r from-transparent via-slate-400 to-transparent hidden md:block" />
       </div>
     </div>
 
     {/* LOGO - Simplified */}
     <div className="relative">
-      <div className="relative bg-slate-800/70 rounded-xl p-2 md:p-3 border border-slate-700/40 backdrop-blur-sm">
+      <div className="relative bg-slate-800/70 rounded-xl p-1 md:p-3 border border-slate-700/40 backdrop-blur-sm">
         <img
           src={img}
           alt="WPP Logo"
-          className="h-12 md:h-14 object-contain"
+          className="h-8 md:h-14 object-contain"
         />
       </div>
     </div>
