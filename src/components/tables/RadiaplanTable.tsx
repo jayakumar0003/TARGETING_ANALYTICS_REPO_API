@@ -378,7 +378,7 @@ export default function RadiaplanTable({ data }: Props) {
       </div>
 
       {/* TABLE WITH COLUMN SEPARATION LINES - Mobile Responsive */}
-      <div className="overflow-auto -mx-1 md:mx-0">
+      <div className="overflow-auto -mx-1 md:mx-0 mb-24">
         <Table className="border-separate border-spacing-0 w-full">
           <TableHeader className="bg-slate-800">
             {table.getHeaderGroups().map((hg) => (
@@ -422,10 +422,9 @@ export default function RadiaplanTable({ data }: Props) {
                     <TableCell
                       key={cell.id}
                       className={`
-              p-2 md:p-4 
-              relative 
-              text-xs md:text-sm
-              min-w-[80px] md:min-w-[100px]
+              px-2 md:px-4 
+                      py-2 md:py-3
+                      min-w-[100px] md:min-w-[120px]
               ${
                 index < row.getVisibleCells().length - 1
                   ? "border-r border-gray-200"

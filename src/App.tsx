@@ -129,7 +129,6 @@ function App() {
     }
   }
 
-
   // -----------------------------
   // UI STATES
   // -----------------------------
@@ -144,14 +143,13 @@ function App() {
     return <div className="p-6 text-red-600">{error}</div>;
   }
 
-
   // -----------------------------
   // RENDER
   // -----------------------------
   return (
     <div className="min-h-screen bg-white">
       {/* HEADER - Minimal & Elegant Design */}
-        <Header />
+      <Header />
 
       {/* MAIN CONTENT - Mobile Responsive */}
       <div className="max-w-8xl mx-auto mt-4 md:mt-6 px-3 md:px-4">
@@ -181,8 +179,9 @@ function App() {
               >
                 Radia Plan
               </TabsTrigger>
+
               <TabsTrigger
-                value="targeting"
+                value="mediaPlan"
                 className="
             px-3 md:px-4 py-2
             font-bold text-xs md:text-sm
@@ -194,11 +193,11 @@ function App() {
             data-[state=active]:text-slate-800
             data-[state=inactive]:border-transparent
             data-[state=inactive]:text-slate-500
-            hover:text-slate-700
           "
               >
-                Targeting & Analytics
+                Media Plan
               </TabsTrigger>
+
               <TabsTrigger
                 value="campaign"
                 className="
@@ -219,7 +218,7 @@ function App() {
               </TabsTrigger>
 
               <TabsTrigger
-                value="mediaPlan"
+                value="targeting"
                 className="
             px-3 md:px-4 py-2
             font-bold text-xs md:text-sm
@@ -231,9 +230,10 @@ function App() {
             data-[state=active]:text-slate-800
             data-[state=inactive]:border-transparent
             data-[state=inactive]:text-slate-500
+            hover:text-slate-700
           "
               >
-                Media Plan
+                Targeting & Analytics
               </TabsTrigger>
             </TabsList>
           </div>
@@ -242,20 +242,20 @@ function App() {
           <TabsContent value="radiaPlan" className="mt-4 md:mt-6">
             <RadiaplanTable data={radiaPlanData} />
           </TabsContent>
-          <TabsContent value="targeting" className="mt-4 md:mt-6">
-            <TargetingAndAnalyicsTable
-              data={targetingdata}
-              onUpdateByPackage={updateByPackage}
-              onUpdateByPackageAndPlacement={updateByPackageAndPlacement}
+          <TabsContent value="mediaPlan" className="mt-4 md:mt-6">
+            <MediaplanTable
+              data={mediaPlanData}
+              onSubmitMediaPlan={updateMediaPlanAndTargeting}
             />
           </TabsContent>
           <TabsContent value="campaign" className="mt-4 md:mt-6">
             <CampaignTable data={campaignData} />
           </TabsContent>
-          <TabsContent value="mediaPlan" className="mt-4 md:mt-6">
-            <MediaplanTable
-              data={mediaPlanData}
-              onSubmitMediaPlan={updateMediaPlanAndTargeting}
+          <TabsContent value="targeting" className="mt-4 md:mt-6">
+            <TargetingAndAnalyicsTable
+              data={targetingdata}
+              onUpdateByPackage={updateByPackage}
+              onUpdateByPackageAndPlacement={updateByPackageAndPlacement}
             />
           </TabsContent>
         </Tabs>

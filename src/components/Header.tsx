@@ -8,7 +8,6 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ 
   title = "Single Source Of Truth", 
 }) => {
-  
   const renderTitleWithLargeFirstLetters = (text: string): React.ReactNode => {
     return text.split(' ').map((word, index) => (
       <span key={index} className="inline-block mr-4">
